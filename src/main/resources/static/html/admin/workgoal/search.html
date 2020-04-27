@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body">
+
+
+        <!-- 内容主体区域 -->
+        <div style="padding: 15px;">
+            <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">目标批次</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="goalno"  id="goalno" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">目标名称</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="goalname"  id="goalname" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">负责人</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="username"  id="username" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">查询</button>
+                        <button class="layui-btn" lay-submit="" lay-filter="export">导出</button>
+                    </div>
+                </div>
+            </div>
+            </form>
+
+
+            <table class="layui-hide" id="cmsWorkTable" lay-filter="cmsWorkTable"></table>
+
+            <script type="text/html" id="checkIsFinish">
+                <input type="checkbox" name="isfinish" value="{{d.id}}" title="竣工"  {{ d.isfinish == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+
+
+            <script type="text/html" id="barDemo">
+                <a class="layui-btn layui-btn-xs" lay-event="follow">跟进</a>
+            </script>
+        </div>
+
+
+<script src="../../../lib/jquery/jquery.js" ></script>
+<script src="../../../lib/layui/layui.js" charset="utf-8"></script>
+        <script src="../../../lib/comm.js" ></script>
+<script>
+    var params;
+    var table;
+    var form;
+    var laydate;
+    function loadTable(){
+        table.render({
+            even: true, //开启隔行背景
+            id:'cmswork'
+            ,elem: '#cmsWorkTable'
+            ,url:'queryAll.do'
+            ,where:params
+            ,cols: [[
+                {type:'numbers'}
+                ,{field:'goalno', title:'目标批次',width:100,templet:'#goalNoTpl',sort:true}
+                ,{field:'goalname', title: '目标名称', edit: 'text',width:250}
+                ,{field:'tousername', title:'负责人',width:80}
+                ,{field:'priority', title:'优先级',width:80,edit:'text',sort:true}
+                ,{field:'plandate', title:'计划日期',width:120,templet:'#planDateTpl',sort:true}
+                ,{field:'schedule', title:'完成进度%',width:100,edit:'text'}
+                ,{field:'isfinish', title:'是否竣工', templet:'#checkIsFinish',unresize:true,width:120}
+                ,{field:'finishdate', title:'竣工日期', width:120,templet:'#finishDateTpl'}
+                ,{field:'remark', title:'完成情况', width:350,edit:'text'}
+                ,{fixed: 'right', width:80, align:'center', toolbar: '#barDemo'}
+            ]]
+            ,page: true
+            ,limit:20
+            ,height: 'full-80'
+        });
+    }
+
+    /**
+     * 初始化
+     * */
+    function init(){
+
+        layui.use('laydate', function(){
+            laydate= layui.laydate;
+            //日期范围
+            /*$(".myDate").each(function(){
+                alert(this);
+                laydate.render({elem: "#"+this.id});
+            });*/
+            /*
+            laydate.render({elem: '#myDate2'});
+            laydate.render({elem: '#myDate3'});
+            */
+            laydate.render({elem: '#goalno',type:'month'});
+
+
+        });
+
+
+        layui.use('table', function(){
+                 table = layui.table
+                    ,form = layui.form;
+
+
+
+
+            loadTable();//加载表格数据
+
+            //监听单元格编辑
+            table.on('edit(cmsWorkTable)', function(obj){
+                var value = obj.value //得到修改后的值
+                    ,data = obj.data //得到所在行所有键值
+                    ,field = obj.field; //得到字段
+                //layer.msg('[ID: '+ data.ID +'] ' + field.toLowerCase() + ' 字段更改为：'+ value);
+                $.ajax({
+                    url: "update.do",
+                    type: "POST",
+                    data:"id="+data.ID+"&"+field.toLowerCase()+"="+value,
+                    success: function(data){
+                        console.log(data);
+                        layer.msg("更新成功");
+                    }
+                });
+            });
+
+
+
+            //监听checkbox
+            form.on('checkbox(checkITem)', function(obj){
+                //layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                $.ajax({
+                    url: "update.do",
+                    type: "POST",
+                    data:"id="+this.value+"&"+this.name+"="+(obj.elem.checked?1:0),
+                    success: function(data){
+                        console.log(data);
+                        layer.msg("更新成功");
+                    }
+                });
+            });
+
+            var $ = layui.$, active = {
+                /**
+                 *删除业务
+                 * */
+                delAction: function(){ //获取选中数据
+                    var checkStatus = table.checkStatus('cmswork')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择删除的数据");
+                        return false;
+                    }
+                    layer.confirm('是否确认选择删除的数据？', function(index){
+                        //do something
+                        for (d in data){
+                            if(data[d].isfinish=="1"){
+                                layer.msg(data[d].taskname+"已竣工,，不能删除");
+                                continue;
+                            }
+                            $.ajax({
+                                url: "del.do",
+                                type: "POST",
+                                data:"id="+data[d].id,
+                                success: function(data){
+                                    console.log(data);
+                                    loadTable();
+                                }
+                            });
+                        }
+                        layer.close(index);
+
+                    });
+
+                },
+                /**
+                 * 添加业务
+                 * */
+                addAction:function(){
+                $.ajax({
+                    url: "add.do",
+                    type: "POST",
+                    data:"",
+                    success: function(data){
+                        console.log(data);
+                        loadTable();
+                    }
+                });
+
+            },
+                /**
+                 * 指派业务
+                 * */
+                toAction:function(){
+                    var checkStatus = table.checkStatus('cmswork')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择要指派的人员");
+                        return false;
+                    }
+
+                    var ids = "";
+                    for(i in data){
+                        ids+=data[i].id+",";
+                    }
+                    layer.open({title:'指派',type:2,content:"touser.html?ids="+ids,area:['100%','100%']});
+                }
+            };
+
+            $('.btn-action .layui-btn').on('click', function(){
+                var type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+
+            //监听提交
+            form.on('submit(search)', function(data){
+                /*layer.alert(JSON.stringify(data.field), {
+                    title: '最终的提交信息'
+                });*/
+                params=data.field;
+
+                loadTable();
+                return false;
+            });
+
+            //监听工具条
+            table.on('tool(cmsWorkTable)', function(obj){
+                var data = obj.data;
+                if(obj.event === 'follow'){
+                    //layer.msg('ID：'+ data.ID + ' 的查看操作');
+                    $.ajax({
+                        url: "queryLog.do",
+                        type: "POST",
+                        data:{id:data.id},
+                        dataType:'json',
+                        success: function(data){
+                            console.log(data);
+                            var html="<table class=\"layui-table\">";
+                            html+="<thead><tr><th>时间</th><th>跟进人</th><th>内容</th></tr></thead>";
+                            for(var i in data){
+                                html+="<tr>";
+                                html+="<td>"+data[i].createdate +" "+data[i].createtime+"</td>";
+                                html+="<td>"+data[i].username+"</td>";
+                                html+="<td>"+data[i].remark+"</td>";
+                                html+="</tr>";
+                            }
+                            html+="</table>";
+
+                            layer.open({
+                                type: 1
+                                ,title:'跟进信息'
+                                ,content: html
+                                ,area:['100%','100%']
+                                ,btn: ['关闭']
+                                ,yes: function(index, layero){
+                                    layer.close(index);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            //监听提交
+            form.on('submit(export)', function(data){
+                var json = JSON.stringify(data.field);
+                var querystr = json2Get(json);
+                window.open("export.do?"+querystr);
+                return false;
+            });
+
+        });
+
+
+    }
+
+    function update(id,key,value){
+        $.ajax({
+            url: "update.do",
+            type: "POST",
+            data:"id="+id+"&"+key+"="+value,
+            success: function(data){
+                console.log(data);
+                layer.msg("更新成功");
+            }
+        });
+    }
+
+    init();
+
+</script>
+</body>
+
+</html>

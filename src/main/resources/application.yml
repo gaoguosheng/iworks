@@ -1,0 +1,35 @@
+server:
+  #http端口
+  port: 8080
+  #http上下文，默认为根路径
+  context-path: /
+  #session超时（秒）
+  session:
+    timeout: 3600
+
+
+
+spring:
+  datasource:
+    #数据库驱动包
+    driver-class-name: com.mysql.jdbc.Driver
+    #oracle 连接串
+    url: jdbc:mysql://172.18.166.23:3307/iworks?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    #数据库用户名
+    username: root
+    #数据库密码
+    password: 123456
+
+  #模板引擎
+  thymeleaf:
+    prefix: classpath:/static
+    cache: false
+    mode: LEGACYHTML5
+
+mybatis:
+  #mybatis配置文件
+  config-location: classpath:mybatis/mybatis-config.xml
+  #mybatis映射文件
+  mapper-locations: classpath:mybatis/mapper/**/*Mapper.xml
+
+admin-title: 企业采购研发协同管理平台

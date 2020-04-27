@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.work.dao.CmsWorkMapper" >
+
+    <select id="query" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+
+      SELECT
+        t.*,
+        t2.username tousername,
+        t3.username createusername,
+        t4.name orgname,
+        (select name from sys_datadict where ddtype='tasktype' and code=t.task_type)task_type_name
+        FROM cms_work  t
+        left join sys_user t2 on t.touser=t2.usercode
+        left join sys_user t3 on t.createuser=t3.usercode
+        left join sys_org t4 on t4.id=t2.orgid
+        where 1=1
+        <if test="name!=null and name!=''">
+            and t2.username like concat('%',#{name},'%')
+        </if>
+        <if test="taskno!=null and taskno!=''">
+            and t.taskno like concat('%',#{taskno},'%')
+        </if>
+        <if test="taskname!=null and taskname!=''">
+            and t.taskname like concat('%',#{taskname},'%')
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+        <if test="orgname!=null and orgname!=''">
+            and t4.name like concat('%',#{orgname},'%')
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.touser,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+        </if>
+        <if test="task_type!=null and task_type!=''">
+            and t.task_type=#{task_type}
+        </if>
+        <if test="req_id!=null and req_id!=''">
+            and t.req_id=#{req_id}
+        </if>
+        <if test="project_id!=null and project_id!=''">
+            and t.project_id=#{project_id}
+        </if>
+
+        order by t.createdate desc,t.id desc
+    </select>
+
+    <select id="queryCount" resultType="Integer" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        SELECT
+        count(*)counter
+        FROM cms_work  t
+        left join sys_user t2 on t.touser=t2.usercode
+        where 1=1
+        <if test="name!=null and name!=''">
+            and t.name like concat('%',#{name},'%')
+        </if>
+        <if test="taskno!=null and taskno!=''">
+            and t.taskno like concat('%',#{taskno},'%')
+        </if>
+        <if test="taskname!=null and taskname!=''">
+            and t.taskname like concat('%',#{taskname},'%')
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and t2.id in (select id from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))  )
+        </if>
+
+    </select>
+
+    <update id="add" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        insert into cms_work(name,taskname,createuser,createdate,createtime,planfinishdate,project_id,project_name,task_type
+        <if test="req_id!=null">
+            ,req_id
+        </if>
+            ,touser
+        )
+        values(#{name},#{taskname},#{createuser},date_format(now(),'%Y-%m-%d'),date_format(now(),'%H:%i:%s'),date_format(now(),'%Y-%m-%d'),
+        #{project_id},#{project_name},#{task_type}
+        <if test="req_id!=null">
+            ,#{req_id}
+        </if>
+        <choose>
+            <when test="touser!=null">
+                ,#{touser}
+            </when>
+            <otherwise>
+                ,#{createuser}
+            </otherwise>
+        </choose>
+
+        )
+    </update>
+
+    <update id="update" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        update cms_work set updatedate=date_format(now(),'%Y-%m-%d'),updatetime=date_format(now(),'%H:%i:%s'),updateuser=#{updateuser}
+        <if test="touser!=null">
+            ,touser=#{touser}
+        </if>
+        <if test="name!=null">
+            ,name=#{name}
+        </if>
+        <if test="taskno!=null">
+            ,taskno=#{taskno}
+        </if>
+        <if test="taskname!=null">
+            ,taskname=#{taskname}
+        </if>
+        <if test="remark!=null">
+            ,remark=#{remark}
+        </if>
+        <if test="monday!=null">
+            ,monday=#{monday}
+        </if>
+        <if test="tuesday!=null">
+            ,tuesday=#{tuesday}
+        </if>
+        <if test="wednesday!=null">
+            ,wednesday=#{wednesday}
+        </if>
+        <if test="thursday!=null">
+            ,thursday=#{thursday}
+        </if>
+        <if test="friday!=null">
+            ,friday=#{friday}
+        </if>
+        <if test="saturday!=null">
+            ,saturday=#{saturday}
+        </if>
+        <if test="sunday!=null">
+            ,sunday=#{sunday}
+        </if>
+        <if test='isfinish!=null and isfinish=="1"'>
+            ,isfinish=#{isfinish},finishdate=date_format(now(),'%Y-%m-%d')
+        </if>
+        <if test='isfinish!=null and isfinish=="0"'>
+            ,isfinish=#{isfinish},finishdate=null
+        </if>
+        <if test="createdate!=null">
+            ,createdate=#{createdate}
+        </if>
+        <if test="planfinishdate!=null">
+            ,planfinishdate=#{planfinishdate}
+        </if>
+        <if test="project_id!=null">
+            ,project_id=#{project_id}
+        </if>
+        <if test="project_name!=null">
+            ,project_name=#{project_name}
+        </if>
+        <if test="project_id!=null">
+            ,task_type=#{task_type}
+        </if>
+
+        where id=#{id}
+    </update>
+
+    <update id="updatePlanFinishDate" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        update cms_work set updatedate=date_format(now(),'%Y-%m-%d'),updatetime=date_format(now(),'%H:%i:%s'),updateuser=#{updateuser}
+
+        <if test="monday!=null or tuesday!=null or wednesday!=null or thursday!=null or friday!=null or saturday!=null or sunday!=null">
+            ,planfinishdate=date_format(STR_TO_DATE(createdate,'%Y-%m-%d')+monday+tuesday+wednesday+thursday+friday+saturday+sunday,'%Y-%m-%d')
+        </if>
+
+        where id=#{id}
+    </update>
+
+    <update id="del" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        delete from cms_work  where id=#{id}
+    </update>
+    <!--获取工作完成状态-->
+    <select id="getWorkFinishStatus" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t.touser,t3.username,t.counter totalcount,ifnull(t2.counter,0)finishcount,round(ifnull(t2.counter,0)/t.counter,1)*100 percent from(
+        select touser,count(*)counter from cms_work t where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="orgid!=null and orgid!=''">
+            and t.touser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))
+        </if>
+            group by t.touser)t
+
+        left join (
+        select touser,count(*)counter from cms_work t where t.isfinish='1'
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="orgid!=null and orgid!=''">
+            and t.touser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))
+        </if>
+          group by t.touser)t2
+        on t.touser=t2.touser
+        left join sys_user t3 on t.touser=t3.usercode
+
+        order by percent desc
+    </select>
+    <!--获取工作空闲状态-->
+    <select id="getWorkFreeStatus" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t5.name orgname,t.usercode,t.username,t2.*,ifnull(t3.counter,0) totalcount,ifnull(t4.counter,0) finishcount,round(ifnull(t4.counter,0)/t3.counter,1)*100 percent,ifnull(t6.counter,0) totalfinishcount,t7.counter unfinishcount from sys_user t
+        left join (
+        select t.touser,sum(t.monday)monday,sum(t.tuesday)tuesday,sum(t.wednesday)wednesday,sum(t.thursday)thursday,sum(t.friday)friday,
+        sum(t.saturday)saturday,sum(sunday)sunday
+        from cms_work t  where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="datestart != null and datestart != '' and dateend != null and dateend != ''">
+        or (t.isfinish!='1' and (t.updatedate <![CDATA[>=]]> #{datestart} and t.updatedate <![CDATA[<=]]>#{dateend}))
+        </if>
+        group by t.touser)t2 on t.usercode=t2.touser
+        left join (
+        select touser,count(*)counter from cms_work t where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t3
+        on t3.touser=t.usercode
+        left join (
+        select touser,count(*)counter from cms_work t where t.isfinish='1'
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t4
+        on t4.touser=t.usercode
+        left join (
+        select touser,count(*)counter from cms_work t where t.isfinish='1'
+        <if test="datestart != null and datestart != ''">AND t.finishdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.finishdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t6
+        on t6.touser=t.usercode
+        left join (
+        select touser,count(*)counter from cms_work t where t.isfinish!='1'
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t7
+        on t7.touser=t.usercode
+        left join sys_org t5 on t5.id=t.orgid
+        where 1=1
+        <if test="orgid!=null and orgid!=''">
+           and  FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))
+        </if>
+        <if test="orgname!=null and orgname!=''">
+            and t5.name like '%' || #{orgname} || '%'
+        </if>
+        order by t.usercode
+    </select>
+
+    <!--获取周工作完成状态-->
+    <select id="getWeekWorkFinishStatus" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t.*,t2.counter finish_counter from (
+            select week(STR_TO_DATE(t.createdate,'%Y-%m-%d'))weeks,count(*)counter
+            from  cms_work t where 1=1
+            <if test="orgid!=null and orgid!=''">
+                and FIND_IN_SET(t.touser,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+            </if>
+            group by week(STR_TO_DATE(t.createdate,'%Y-%m-%d')))t
+            left join (
+            select week(STR_TO_DATE(t.finishdate,'%Y-%m-%d'))weeks,count(*)counter
+            from  cms_work t where t.isfinish='1'
+            <if test="orgid!=null and orgid!=''">
+                and FIND_IN_SET(t.touser,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+            </if>
+            group by week(STR_TO_DATE(t.finishdate,'%Y-%m-%d'))
+            )t2 on t.weeks=t2.weeks
+            order by t.weeks
+            limit 10
+    </select>
+
+    <select id="getOrgTotal" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t.*,t.name username,ifnull(t2.counter,0)totalcount,ifnull(t3.counter,0)finishcount from sys_org t
+        left join (
+        select b.orgid,count(*)counter from cms_work a
+        left join sys_user b on a.touser=b.usercode
+        where 1=1
+        <if test="datestart != null and datestart != ''">AND a.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND a.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by b.orgid)t2 on t.id=t2.orgid
+        left join (
+        select b.orgid,count(*)counter from cms_work a
+        left join sys_user b on a.touser=b.usercode
+        where a.isfinish=1
+        <if test="datestart != null and datestart != ''">AND a.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND a.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by b.orgid)t3 on t.id=t3.orgid
+
+    </select>
+
+
+    <!--获取工作空闲状态-->
+    <select id="getUserTotal" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t5.name orgname,t.usercode,t.username,ifnull(t3.counter,0) totalcount,ifnull(t4.counter,0) finishcount from sys_user t
+        left join (
+        select touser,count(*)counter from cms_work t where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t3
+        on t3.touser=t.usercode
+        left join (
+        select touser,count(*)counter from cms_work t where t.isfinish='1'
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t4
+        on t4.touser=t.usercode
+        left join sys_org t5 on t5.id=t.orgid
+        where 1=1
+        <if test="orgname!=null and orgname!=''">
+            and t5.name like '%' || #{orgname} || '%'
+        </if>
+        order by t.usercode
+    </select>
+
+
+    <!--工作量排名 -->
+    <select id="userRanking" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+
+        select t4.name orgname,t.usercode touser,t.username,ifnull(t3.counter,0) counter from sys_user t
+        left join (
+        select touser,count(*)counter from cms_work t where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="touser!=null and touser!=''">
+            and t.touser=#{touser}
+        </if>
+        group by t.touser)t3
+        on t3.touser=t.usercode
+        left join sys_org t4 on t4.id=t.orgid
+        where 1=1
+        <if test="orgids!=null">
+            and t.orgid in
+            <foreach item="item" index="index" collection="orgids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        order by counter desc
+
+    </select>
+
+
+    <update id="log" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        insert into  cms_log (objid,objtype,createuser,remark,createdate,createtime)
+        values(#{id},'cmswork',#{createuser},#{remark},date_format(now(),'%Y-%m-%d'),date_format(now(),'%H:%i:%s'))
+    </update>
+
+    <select id="queryLog" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select * from (
+        select t2.username,t.* from cms_log t
+        left join sys_user t2 on t.createuser=t2.usercode
+        where t.objid=#{id} and t.objtype='cmswork' order by id desc)t limit 20
+    </select>
+
+
+    <select id="queryBug" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+
+        SELECT
+        t.*,
+        t2.username tousername,
+        t3.username createusername,
+        t4.name orgname,
+        (select name from sys_datadict where ddtype='tasktype' and code=t.task_type)task_type_name
+        FROM cms_work_bug  t
+        left join sys_user t2 on t.touser=t2.usercode
+        left join sys_user t3 on t.createuser=t3.usercode
+        left join sys_org t4 on t4.id=t2.orgid
+        where 1=1
+        <if test="name!=null and name!=''">
+            and t2.username like concat('%',#{name},'%')
+        </if>
+        <if test="taskno!=null and taskno!=''">
+            and t.taskno like concat('%',#{taskno},'%')
+        </if>
+        <if test="taskname!=null and taskname!=''">
+            and t.taskname like concat('%',#{taskname},'%')
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+        <if test="orgname!=null and orgname!=''">
+            and t4.name like concat('%',#{orgname},'%')
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.touser,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+        </if>
+        <if test="task_type!=null and task_type!=''">
+            and t.task_type=#{task_type}
+        </if>
+
+        order by t.createdate desc,t.id desc
+    </select>
+
+    <update id="updateBug" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        update cms_work_bug set updatedate=date_format(now(),'%Y-%m-%d'),updatetime=date_format(now(),'%H:%i:%s'),updateuser=#{updateuser}
+        <if test="touser!=null">
+            ,touser=#{touser}
+        </if>
+        <if test="name!=null">
+            ,name=#{name}
+        </if>
+        <if test="taskno!=null">
+            ,taskno=#{taskno}
+        </if>
+        <if test="taskname!=null">
+            ,taskname=#{taskname}
+        </if>
+        <if test="remark!=null">
+            ,remark=#{remark}
+        </if>
+        <if test="monday!=null">
+            ,monday=#{monday}
+        </if>
+        <if test="tuesday!=null">
+            ,tuesday=#{tuesday}
+        </if>
+        <if test="wednesday!=null">
+            ,wednesday=#{wednesday}
+        </if>
+        <if test="thursday!=null">
+            ,thursday=#{thursday}
+        </if>
+        <if test="friday!=null">
+            ,friday=#{friday}
+        </if>
+        <if test="saturday!=null">
+            ,saturday=#{saturday}
+        </if>
+        <if test="sunday!=null">
+            ,sunday=#{sunday}
+        </if>
+        <if test='isfinish!=null and isfinish=="1"'>
+            ,isfinish=#{isfinish},finishdate=date_format(now(),'%Y-%m-%d')
+        </if>
+        <if test='isfinish!=null and isfinish=="0"'>
+            ,isfinish=#{isfinish},finishdate=null
+        </if>
+        <if test="createdate!=null">
+            ,createdate=#{createdate}
+        </if>
+        <if test="planfinishdate!=null">
+            ,planfinishdate=#{planfinishdate}
+        </if>
+        where id=#{id}
+    </update>
+
+
+    <select id="queryAllProjects" resultType="HashMap">
+        select * from project order by id
+    </select>
+
+    <select id="queryProjectUsed" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+
+        select t.*,t2.userlist,ifnull(t2.counter,0)counter,ifnull(t3.counter,0)work_counter,ifnull(t4.counter,0)bug_counter from project t
+        left join
+        (
+        select t.project_id,GROUP_CONCAT(t2.username) userlist,count(*)counter from(
+        select t.project_id,t.touser from cms_work t where
+        project_id is not null
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.project_id,t.touser
+        union
+        select t.project_id,t.touser from cms_work_bug t
+        where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.project_id,t.touser
+        )t,sys_user t2
+        where t.touser=t2.usercode
+        group by t.project_id)t2 on t.id=t2.project_id
+        left join (
+        select t.project_id,count(*)counter from cms_work t where
+        project_id is not null
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.project_id
+        )t3 on t.id=t3.project_id
+        left join (
+        select t.project_id,count(*)counter from cms_work_bug t where
+        project_id is not null
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.project_id
+        )t4 on t.id=t4.project_id
+
+
+    </select>
+
+
+</mapper>

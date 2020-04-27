@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.sys.dao.RoleMapper" >
+
+    <select id="getRolePermissions" parameterType="com.ggs.admin.module.sys.model.RoleModel" resultType="com.ggs.admin.module.sys.model.PermissionModel">
+        select t.* from SYS_PERMISSION t where 1=1
+         <if test="id!=null and id!=''">
+            and  t.id in(
+             select t2.permission_id from SYS_PERMISSION_ROLE t2 where t2.role_id =#{id}
+             )
+         </if>
+
+     order by t.id asc
+    </select>
+
+
+    <select id="query" resultType="com.ggs.admin.module.sys.model.RoleModel" parameterType="com.ggs.admin.module.sys.model.RoleModel">
+        select t.* from(
+        SELECT
+        t.*
+        FROM sys_role  t
+        where 1=1
+        <if test="name!=null and name!=''">
+            and t.name like concat('%',#{name},'%')
+        </if>
+        order by id )t   limit ${start},${limit}
+    </select>
+
+    <select id="queryCount" resultType="Integer" parameterType="com.ggs.admin.module.sys.model.RoleModel">
+        SELECT
+        count(*)counter
+        FROM sys_role  t where 1=1
+        <if test="name!=null and name!=''">
+            and t.name like '%' ||  #{name} || '%'
+        </if>
+
+    </select>
+
+    <update id="update"  parameterType="com.ggs.admin.module.sys.model.RoleModel">
+          update  sys_role  set name=#{name} where id=#{id}
+    </update>
+
+    <update id="add"  parameterType="com.ggs.admin.module.sys.model.RoleModel">
+          insert into sys_role (id,name)values(#{id},#{name})
+    </update>
+
+    <update id="del"  parameterType="com.ggs.admin.module.sys.model.RoleModel">
+       delete from  sys_role  where id=#{id}
+    </update>
+    
+
+    <update id="addRolePermission"  parameterType="com.ggs.admin.module.sys.model.RoleModel">
+        insert into SYS_PERMISSION_ROLE (ROLE_ID,PERMISSION_ID)values(#{id},#{permissionid})
+    </update>
+
+    <update id="delRolePermission"  parameterType="com.ggs.admin.module.sys.model.RoleModel">
+        delete from  SYS_PERMISSION_ROLE where ROLE_ID=#{id}
+    </update>
+    
+    <select id="getNewRoleid" resultType="Integer" >
+        select SEQ_SYS_ROLE.nextval from dual
+    </select>
+    
+    <select id="getRole" resultType="com.ggs.admin.module.sys.model.RoleModel" parameterType="com.ggs.admin.module.sys.model.RoleModel">
+        select * from sys_role t where t.id=#{id}
+    </select>
+
+</mapper>

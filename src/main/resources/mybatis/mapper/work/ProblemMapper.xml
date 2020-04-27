@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.work.dao.ProblemMapper" >
+
+    <select id="query" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.ProblemModel">
+        select t.* from(
+
+      SELECT
+        t.*,
+        t2.username tousername,
+        t3.username createusername,
+        (select d.name from sys_datadict d where d.code=t.severity and d.ddtype='severity') severityname,
+        (select d.name from sys_datadict d where d.code=t.category and d.ddtype='category') categoryname,
+        (select d.name from sys_datadict d where d.code=t.causetype and d.ddtype='causetype') causetypename
+        FROM cms_problem  t
+        left join sys_user t2 on t.touser=t2.usercode
+        left join sys_user t3 on t.createuser=t3.usercode
+        where 1=1
+        <if test="title!=null and title!=''">
+            and t.title like concat('%',#{title},'%')
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+
+        <if test="orgid!=null and orgid!=''">
+            and t.createuser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))  )
+        </if>
+        <if test="category!=null and category!=''">
+            and t.category=#{category}
+        </if>
+        <if test="severity!=null and severity!=''">
+            and t.severity=#{severity}
+        </if>
+        <if test="causetype!=null and causetype!=''">
+            and t.causetype=#{causetype}
+        </if>
+        order by t.id desc)t limit ${start},${limit}
+    </select>
+
+    <select id="queryCount" resultType="Integer" parameterType="com.ggs.admin.module.work.model.ProblemModel">
+        SELECT
+        count(*)counter
+        FROM cms_problem  t where 1=1
+        <if test="title!=null and title!=''">
+            and t.title like concat('%',#{title},'%')
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+
+        <if test="orgid!=null and orgid!=''">
+            and t.createuser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))  )
+        </if>
+        <if test="category!=null and category!=''">
+            and t.category=#{category}
+        </if>
+        <if test="severity!=null and severity!=''">
+            and t.severity=#{severity}
+        </if>
+        <if test="causetype!=null and causetype!=''">
+            and t.causetype=#{causetype}
+        </if>
+
+    </select>
+    
+    <update id="add" parameterType="com.ggs.admin.module.work.model.ProblemModel">
+        insert into cms_problem(title,content,createuser,touser,cause,solve,severity,category,causetype,createdate,createtime)
+        values( #{title},#{content},#{createuser},#{createuser},#{cause},#{solve},#{severity},#{category},#{causetype},date_format(now(),'%Y-%m-%d'),date_format(now(),'%H:%i:%s'))
+    </update>
+
+    <update id="update" parameterType="com.ggs.admin.module.work.model.ProblemModel">
+        update cms_problem set updatedate=date_format(now(),'%Y-%m-%d'),updatetime=date_format(now(),'%H:%i:%s'),updateuser=#{updateuser}
+        <if test="touser!=null">
+            ,touser=#{touser}
+        </if>
+        <if test="title!=null">
+            ,title=#{title}
+        </if>
+        <if test="content!=null">
+            ,content=#{content}
+        </if>
+        <if test="cause!=null">
+            ,cause=#{cause}
+        </if>
+        <if test="solve!=null">
+            ,solve=#{solve}
+        </if>
+        <if test="severity!=null">
+            ,severity=#{severity}
+        </if>
+        <if test="category!=null">
+            ,category=#{category}
+        </if>
+        <if test="causetype!=null">
+            ,causetype=#{causetype}
+        </if>
+        <if test='isfinish!=null and isfinish=="1"'>
+            ,isfinish=#{isfinish},finishdate=date_format(now(),'%Y-%m-%d')
+        </if>
+        <if test='isfinish!=null and isfinish=="0"'>
+            ,isfinish=#{isfinish},finishdate=null
+        </if>
+        where id=#{id}
+    </update>
+    
+    <update id="del" parameterType="com.ggs.admin.module.work.model.ProblemModel">
+        delete from cms_problem  where id=#{id}
+    </update>
+
+    <select id="queryById" resultType="com.ggs.admin.module.work.model.ProblemModel" parameterType="com.ggs.admin.module.work.model.ProblemModel">
+        select t.* from cms_problem t where t.id=#{id}
+    </select>
+
+
+    <!--获取周工作完成状态-->
+    <select id="getWeekProblemFinishStatus" parameterType="com.ggs.admin.module.work.model.ProblemModel" resultType="HashMap">
+        select t.*,t2.counter finish_counter from (
+        select week(STR_TO_DATE(t.createdate,'%Y-%m-%d'))weeks,count(*)counter
+        from  cms_problem t where 1=1
+        <if test="orgid!=null and orgid!=''">
+            and t.createuser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))  )
+        </if>
+        group by week(STR_TO_DATE(t.createdate,'%Y-%m-%d')))t
+        left join (
+        select week(STR_TO_DATE(t.createdate,'%Y-%m-%d'))weeks,count(*)counter
+        from  cms_problem t where t.isfinish='1'
+        <if test="orgid!=null and orgid!=''">
+            and t.createuser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))  )
+        </if>
+        group by week(STR_TO_DATE(t.createdate,'%Y-%m-%d'))
+        )t2 on t.weeks=t2.weeks
+        order by t.weeks
+        limit 10
+    </select>
+
+    <select id="causeTypeTotal" parameterType="com.ggs.admin.module.work.model.ProblemModel" resultType="HashMap">
+        select t.causetype,count(*)counter,(select d.name from sys_datadict d where d.code=t.causetype and d.ddtype='causetype') name
+        from ggs.cms_problem  t
+        left join ggs.sys_user t2 on t.createuser=t2.usercode
+        left join ggs.sys_org t3 on t2.orgid=t3.id
+        where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        <if test="orgname!=null and orgname!=''">
+            and t3.name like '%' || #{orgname} || '%'
+        </if>
+        group by t.causetype
+    </select>
+
+
+    <select id="getOrgTotal" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t.*,t.name username,ifnull(t2.counter,0)totalcount,ifnull(t3.counter,0)finishcount from sys_org t
+        left join (
+        select b.orgid,count(*)counter from cms_problem a
+        left join sys_user b on a.touser=b.usercode
+        where 1=1
+        <if test="datestart != null and datestart != ''">AND a.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND a.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by b.orgid)t2 on t.id=t2.orgid
+        left join (
+        select b.orgid,count(*)counter from cms_problem a
+        left join sys_user b on a.touser=b.usercode
+        where a.isfinish=1
+        <if test="datestart != null and datestart != ''">AND a.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND a.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by b.orgid)t3 on t.id=t3.orgid
+
+    </select>
+
+
+    <!--获取工作空闲状态-->
+    <select id="getUserTotal" parameterType="com.ggs.admin.module.work.model.CmsWorkModel" resultType="HashMap">
+        select t5.name orgname,t.usercode,t.username,ifnull(t3.counter,0) totalcount,ifnull(t4.counter,0) finishcount from ggs.sys_user t
+        left join (
+        select touser,count(*)counter from cms_problem t where 1=1
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t3
+        on t3.touser=t.usercode
+        left join (
+        select touser,count(*)counter from cms_problem t where t.isfinish='1'
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+        group by t.touser)t4
+        on t4.touser=t.usercode
+        left join sys_org t5 on t5.id=t.orgid
+        where 1=1
+        <if test="orgname!=null and orgname!=''">
+            and t5.name like '%' || #{orgname} || '%'
+        </if>
+        order by t.usercode
+    </select>
+
+
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.sys.dao.UserMapper" >
+
+    <select id="getUser" resultType="com.ggs.admin.module.sys.model.UserModel" parameterType="com.ggs.admin.module.sys.model.UserModel">
+      SELECT
+        t.*,t2.name orgname
+        FROM sys_user  t
+        left join sys_org t2 on t.orgid=t2.id
+        where 1=1
+        <if test="usercode!=null and usercode!=''">
+            and t.usercode=#{usercode}
+        </if>
+        <if test="password!=null and password!=''">
+            and t.password=#{password}
+        </if>
+        <if test="username!=null and username!=''">
+            and t.username like CONCAT('%', #{username}, '%')
+        </if>
+    </select>
+
+    <update id="updateUserPassword" parameterType="com.ggs.admin.module.sys.model.UserModel">
+        update sys_user set password=#{password} where  usercode=#{usercode}
+    </update>
+
+    <select id="getUserPermissions" parameterType="com.ggs.admin.module.sys.model.UserModel" resultType="com.ggs.admin.module.sys.model.PermissionModel">
+        select t.* from SYS_PERMISSION t where t.id in(
+               select t2.permission_id from SYS_PERMISSION_ROLE t2 where t2.role_id in (
+                      select t3.ROLE_ID from SYS_ROLE_USER t3 where t3.USERCODE=#{usercode}
+               )
+     ) order by orderno asc
+    </select>
+
+
+    <select id="query" resultType="com.ggs.admin.module.sys.model.UserModel" parameterType="com.ggs.admin.module.sys.model.UserModel">
+        select t.* from(
+
+        SELECT
+        t.*,t2.ROLENAME,t3.name orgname
+        FROM sys_user  t
+        LEFT JOIN (
+        SELECT USERCODE, GROUP_CONCAT(name)ROLENAME FROM(
+        SELECT T.*,T2.NAME FROM  SYS_ROLE_USER T
+        LEFT JOIN SYS_ROLE T2 ON T.ROLE_ID=T2.ID) t GROUP BY t.USERCODE
+        ) t2 ON T.usercode=t2.USERCODE
+        left join sys_org t3 on t.orgid=t3.id
+        where 1=1
+        <if test="usercode!=null and usercode!=''">
+            and t.usercode like concat('%',#{usercode},'%')
+        </if>
+        <if test="username!=null and username!=''">
+            and t.username like concat('%',#{username},'%')
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))
+        </if>
+        order by T.usercode )t limit ${start},${limit}
+    </select>
+
+    <select id="queryCount" resultType="Integer" parameterType="com.ggs.admin.module.sys.model.UserModel">
+        SELECT
+        count(*)counter
+        FROM sys_user  t where 1=1
+        <if test="usercode!=null and usercode!=''">
+            and t.usercode like concat('%',#{usercode},'%')
+        </if>
+        <if test="username!=null and username!=''">
+            and t.username like concat('%',#{username},'%')
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))
+        </if>
+
+    </select>
+
+    <update id="update"  parameterType="com.ggs.admin.module.sys.model.UserModel">
+          update  sys_user  set username=#{username},orgid=#{orgid} where usercode=#{usercode}
+    </update>
+
+    <update id="add"  parameterType="com.ggs.admin.module.sys.model.UserModel">
+          insert into sys_user (usercode,username,password,orgid)values(#{usercode},#{username},'123456',#{orgid})
+    </update>
+
+    <update id="del"  parameterType="com.ggs.admin.module.sys.model.UserModel">
+       delete from  sys_user  where usercode=#{usercode}
+    </update>
+
+    <select id="getRoles" resultType="com.ggs.admin.module.sys.model.RoleModel" parameterType="com.ggs.admin.module.sys.model.UserModel">
+        select * from sys_role t  where 1=1
+        <if test="usercode!=null and usercode!=''">
+            and t.id in (
+              select ROLE_ID from  SYS_ROLE_USER t2 where t2.USERCODE=#{usercode}
+            )
+        </if>
+        order by t.id
+    </select>
+
+    <update id="addUserRole"  parameterType="com.ggs.admin.module.sys.model.UserModel">
+        insert into SYS_ROLE_USER (USERCODE,ROLE_ID)values(#{usercode},#{roleid})
+    </update>
+
+    <update id="delUserRole"  parameterType="com.ggs.admin.module.sys.model.UserModel">
+        delete from  SYS_ROLE_USER where USERCODE=#{usercode}
+    </update>
+
+
+
+
+    <select id="queryAll" resultType="HashMap" parameterType="HashMap">
+        select t.* from sys_user t where 1=1
+        <if test="usercode!=null and usercode!=''">
+            and t.usercode=#{usercode}
+        </if>
+        <if test="post!=null and post!=''">
+            and t.post=#{post}
+        </if>
+        order by t.usercode;
+    </select>
+
+</mapper>

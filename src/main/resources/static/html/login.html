@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title th:text="${title}"></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body" >
+
+    <div align="center">
+    <table  cellpadding="10" cellspacing="2" border="0" style="margin: 60px;line-height: 60px;">
+        <caption th:text="${title}" style="font-weight: bold;font-size: large"></caption>
+        <form class="layui-form" action="checkLogin.do"  method="post" >
+        <tr>
+            <td align="right">账号：</td>
+            <td><input type="text" name="usercode"  id="usercode" placeholder="请输入账号" autocomplete="off" class="layui-input" value="" required  style="width: 200px;"></td>
+        </tr>
+        <tr>
+            <td align="right">密码：</td>
+            <td><input type="password" name="password" lay-verify="pass" placeholder="请输入密码" autocomplete="off" class="layui-input" value="" required style="width: 200px;"></td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td><button class="layui-btn" lay-submit="" lay-filter="login"  onclick="saveLogin();" style="width: 200px;">登录</button></td>
+        </tr>
+            <tr>
+                <td colspan="2">
+                    <span th:text="${title}"></span> ©   <a href="#" target="_blank">GGS.</a> All Rights Reserved
+                </td>
+            </tr>
+        </form>
+    </table>
+    </div>
+
+<script src="../lib/jquery/jquery.js"></script>
+<script src="../lib/jquery/jquery.cookie.js"></script>
+<script src="../lib/layui/layui.js" charset="utf-8"></script>
+<script>
+
+
+    function saveLogin(){
+        $.cookie('usercode', $("#usercode").val(), { expires: 30 });
+    }
+
+$(function(){
+    $("#usercode").focus();
+    $("#usercode").val($.cookie('usercode'));
+    layui.use('layer', function(){
+        var layer = layui.layer;
+        var msg = document.all.msg.value;
+        if(msg){
+            layer.msg(msg);
+        }
+    });
+
+});
+
+</script>
+</body>
+<input type="hidden" id="msg" th:value="${msg}">
+</html>

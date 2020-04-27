@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.work.dao.ReqMapper" >
+
+
+    <update id="add" parameterType="com.ggs.admin.module.work.model.ReqModel">
+        insert into cms_work_req(
+        createuser
+        ,createdate
+        ,createtime
+        ,project_id
+        ,title
+        ,content
+        ,priority
+        ,req_user
+        ,req_finish_date
+        <if test="dev_user!=null and dev_user!=''">
+            ,dev_user
+        </if>
+        <if test="dev_start_date!=null and dev_start_date!=''">
+            ,dev_start_date
+        </if>
+        <if test="dev_end_date!=null and dev_end_date!=''">
+            ,dev_end_date
+        </if>
+        <if test="test_user!=null and test_user!=''">
+            ,test_user
+        </if>
+        <if test="test_start_date!=null and test_start_date!=''">
+            ,test_start_date
+        </if>
+        <if test="test_end_date!=null and test_end_date!=''">
+            ,test_end_date
+        </if>
+        )
+        values(
+        #{createuser}
+        ,date_format(now(),'%Y-%m-%d')
+        ,date_format(now(),'%H:%i:%s')
+        ,#{project_id}
+        ,#{title}
+        ,#{content}
+        ,#{priority}
+        ,#{req_user}
+        ,#{req_finish_date}
+        <if test="dev_user!=null and dev_user!=''">
+            ,#{dev_user}
+        </if>
+        <if test="dev_start_date!=null and dev_start_date!=''">
+            ,#{dev_start_date}
+        </if>
+        <if test="dev_end_date!=null and dev_end_date!=''">
+            ,#{dev_end_date}
+        </if>
+        <if test="test_user!=null and test_user!=''">
+            ,#{test_user}
+        </if>
+        <if test="test_start_date!=null and test_start_date!=''">
+            ,#{test_start_date}
+        </if>
+        <if test="test_end_date!=null and test_end_date!=''">
+            ,#{test_end_date}
+        </if>
+        )
+    </update>
+
+    <select id="query" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.ReqModel">
+        select
+            t2.username createuser_name
+            ,t3.username req_user_name
+            ,t4.username dev_user_name
+            ,t5.username test_user_name
+            ,t6.`name` project_name
+            ,t7.name status_name
+            ,t8.name priority_name
+            ,t.*
+            from cms_work_req t
+            left join sys_user t2 on t.createuser=t2.usercode
+            left join sys_user t3 on t.req_user=t3.usercode
+            left join sys_user t4 on t.dev_user=t4.usercode
+            left join sys_user t5 on t.test_user=t5.usercode
+            left join project t6 on t.project_id=t6.id
+            left join sys_datadict t7 on t.status=t7.code and t7.ddtype='reqstatus'
+            left join sys_datadict t8 on t.priority=t8.code and t8.ddtype='priority'
+            where 1=1
+            <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+            <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+            <if test="title!=null and title!=''">
+                and t.title like concat('%',#{title},'%')
+            </if>
+            <if test="project_id!=null">
+                and t.project_id=#{project_id}
+            </if>
+            <if test="usercode!=null and usercode!=''">
+                and (t.createuser=#{usercode} or t.req_user=#{usercode} or t.dev_user=#{usercode} or t.test_user=#{usercode})
+            </if>
+            <if test="status!=null and status!=''">
+                and t.status=#{status}
+            </if>
+            <if test="username!=null and username!=''">
+                and (
+                t3.username like concat('%',#{username},'%')
+                or t4.username like concat('%',#{username},'%')
+                or t5.username like concat('%',#{username},'%')
+                )
+            </if>
+            order by t.createdate desc,t.id desc
+
+    </select>
+
+    <update id="del" parameterType="com.ggs.admin.module.work.model.ReqModel">
+        delete from cms_work_req  where id=#{id}
+    </update>
+
+    <select id="queryById" resultType="com.ggs.admin.module.work.model.ReqModel" parameterType="com.ggs.admin.module.work.model.ReqModel">
+        select * from cms_work_req where id=#{id}
+    </select>
+
+
+    <update id="update" parameterType="com.ggs.admin.module.work.model.ReqModel">
+        update cms_work_req set updatedate=date_format(now(),'%Y-%m-%d'),updatetime=date_format(now(),'%H:%i:%s'),updateuser=#{updateuser}
+        <if test="project_id!=null and project_id!=''">
+            ,project_id=#{project_id}
+        </if>
+        <if test="title!=null and title!=''">
+            ,title=#{title}
+        </if>
+        <if test="content!=null and content!=''">
+            ,content=#{content}
+        </if>
+        <if test="priority!=null and priority!=''">
+            ,priority=#{priority}
+        </if>
+        <if test="req_user!=null and req_user!=''">
+            ,req_user=#{req_user}
+        </if>
+        <if test="req_finish_date!=null and req_finish_date!=''">
+            ,req_finish_date=#{req_finish_date}
+        </if>
+
+        <if test="dev_user!=null and dev_user!=''">
+            ,dev_user=#{dev_user}
+        </if>
+        <if test="dev_start_date!=null and dev_start_date!=''">
+            ,dev_start_date=#{dev_start_date}
+        </if>
+        <if test="dev_end_date!=null and dev_end_date!=''">
+            ,dev_end_date=#{dev_end_date}
+        </if>
+        <if test="dev_finish_date!=null and dev_finish_date!=''">
+            ,dev_finish_date=#{dev_finish_date}
+        </if>
+        <if test="test_user!=null and test_user!=''">
+            ,test_user=#{test_user}
+        </if>
+        <if test="test_start_date!=null and test_start_date!=''">
+            ,test_start_date=#{test_start_date}
+        </if>
+        <if test="test_end_date!=null and test_end_date!=''">
+            ,test_end_date=#{test_end_date}
+        </if>
+        <if test="test_finish_date!=null and test_finish_date!=''">
+            ,test_finish_date=#{test_finish_date}
+        </if>
+        <if test="status!=null and status!=''">
+            ,status=#{status}
+        </if>
+        <choose>
+            <when test="status!=null and status==5">
+                ,dev_finish_date=date_format(now(),'%Y-%m-%d')
+            </when>
+            <when test="status!=null and status==7">
+                ,test_finish_date=date_format(now(),'%Y-%m-%d')
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        where id=#{id}
+    </update>
+
+</mapper>

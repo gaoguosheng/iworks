@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.sys.dao.DatadictMapper" >
+
+    <select id="query" resultType="com.ggs.admin.module.sys.model.DatadictModel" parameterType="com.ggs.admin.module.sys.model.DatadictModel">
+        select t.*,
+        IFNULL((select d.name from sys_datadict d where d.ddtype='0' and d.code=t.ddtype),'一级分类')ddtypename
+        from SYS_Datadict  t where 1=1
+        <if test="code!=null and code!=''">
+          and t.code=#{code}
+        </if>
+        <if test="name!=null and name!=''">
+            and t.name like concat('%',#{name},'%')
+        </if>
+        <if test="ddtype!=null and ddtype!=''">
+            and t.ddtype=#{ddtype}
+        </if>
+        order by t.ddtype,t.code
+    </select>
+
+    <select id="queryCount" resultType="Integer" parameterType="com.ggs.admin.module.sys.model.DatadictModel">
+        select count(*)counter from SYS_Datadict  t where 1=1
+        <if test="code!=null and code!=''">
+            and t.code=#{code}
+        </if>
+        <if test="name!=null and name!=''">
+            and t.name like '%' || #{name} || '%'
+        </if>
+        <if test="ddtype!=null and ddtype!=''">
+            and t.ddtype=#{ddtype}
+        </if>
+
+    </select>
+
+
+    <update id="update"  parameterType="com.ggs.admin.module.sys.model.DatadictModel">
+        update  SYS_DATADICT  set code=#{code},name=#{name},ddtype=#{ddtype} where id=#{id}
+    </update>
+
+    <update id="add"  parameterType="com.ggs.admin.module.sys.model.DatadictModel">
+        insert into SYS_DATADICT (id,code,name,ddtype) values(seq_sys_datadict.nextval,#{code},#{name},#{ddtype})
+    </update>
+
+    <update id="del"  parameterType="com.ggs.admin.module.sys.model.DatadictModel">
+        delete from  SYS_DATADICT  where id=#{id}
+    </update>
+    
+    <select id="getDatadictById"  parameterType="Integer"  resultType="com.ggs.admin.module.sys.model.DatadictModel">
+        select * from sys_datadict t where t.id=#{id}
+    </select>
+
+</mapper>

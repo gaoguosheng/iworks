@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body">
+
+
+        <!-- 内容主体区域 -->
+        <div style="margin: 10px;">
+
+            <form class="layui-form" action="">
+
+                <br/>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">主订单</label>
+                    <div class="layui-input-inline">
+                        <select id="order_id" name="order_id">
+                            <option  th:each="o,i : ${orderList}" th:text="${o.ordername}" th:value="${o.id}"></option>
+                        </select>
+                    </div>
+
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" onclick="addOrderMaster()">新增主订单</button>
+                    </div>
+
+                    <label class="layui-form-label">给谁</label>
+                    <div class="layui-input-inline">
+                        <select id="usercode" name="usercode" lay-verify="required" lay-search="">
+                            <option  th:each="o,i : ${userList}" th:text="${o.username}" th:value="${o.usercode}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <input id="usercode_hidden" type="hidden" th:value="${admin.usercode}"/>
+            </form>
+
+            <div class="layui-btn-group btn-action">
+                <button class="layui-btn"  data-type="saveAction" id="saveBtn" style="display: none">提交</button>
+            </div>
+            <div>
+                <div id="total_price" style="color: red"></div>
+                <div id="selDiv"></div>
+            </div>
+
+            <table class="layui-hide" id="myTable" lay-filter="myTable"></table>
+
+        </div>
+
+
+
+
+
+
+<script src="../../../lib/jquery/jquery.js" ></script>
+<script src="../../../lib/layui/layui.js" charset="utf-8"></script>
+
+
+        <script>
+            var params;
+            var table;
+            var layer;
+            var form;
+
+            layui.use('layer', function(){
+                layer = layui.layer;
+            });
+
+
+
+            function loadTable(){
+                table.render({
+                    even: true, //开启隔行背景
+                    id:'myTableId'
+                    ,elem: '#myTable'
+                    ,url:'queryProducts.do'
+                    ,where:params
+                    ,cols: [[
+                        ,{type: 'checkbox'}
+                        ,{field:'id', title:'id',sort: true,width:50}
+                        ,{field:'name', title:'商品',width:300}
+                        ,{field:'price', title:'单价',width:100}
+                        ,{field:'order_count', title:'销量',sort: true,width:100}
+                        ,{field:'num', title:'数量',width:100,edit: 'text'}
+                    ]]
+                    ,page: false
+                    ,height: 'full-140'
+                    ,initSort: {field:'order_count', type:'desc'}
+                });
+            }
+
+
+            layui.use('table', function(){
+                table = layui.table
+                    ,form = layui.form;
+
+
+
+                loadTable();//加载表格数据
+
+
+
+
+                var $ = layui.$, active = {
+                    /**
+                     *指派业务
+                     * */
+                    saveAction: function(){ //获取选中数据
+                        var checkStatus = table.checkStatus('myTableId')
+                            ,data = checkStatus.data;
+
+                        if(!$("#order_id").val()){
+                            layer.alert("今天还没有主订单，请尝试新增主订单");
+                            return false;
+                        }
+
+                        if(!data || data.length==0){
+                            layer.alert("您还未选择菜单");
+                            return false;
+                        }
+
+                        layer.confirm('是否确认提交？', function(index){
+                            //do something
+                            for(i in data){
+                                //alert($("#usercode").val()+$("#username").val()+JSON.stringify(data[i]));
+
+                                let num = data[i].num;
+                                if(!num){
+                                    num=1;
+                                }
+                                $.ajax({
+                                    url: "add.do",
+                                    type: "POST",
+                                    data:{order_id:$("#order_id").val(),usercode:$("#usercode").val(),username:$("#usercode").find("option:selected").text(),product_id:data[i].id,num:num,product_name:data[i].name,price:data[i].price},
+                                    success: function(data){
+                                        console.log(data);
+                                    }
+                                });
+
+                            }
+
+                            var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                            parent.layer.close(index); //再执行关闭
+                            parent.loadTable();
+
+                            layer.close(index);
+
+                        });
+
+                    }
+                };
+
+                $('.btn-action .layui-btn').on('click', function(){
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+                //监听提交
+                form.on('submit(search)', function(data){
+                    /*layer.alert(JSON.stringify(data.field), {
+                        title: '最终的提交信息'
+                    });*/
+                    params=data.field;
+
+                    loadTable();
+                    return false;
+                });
+
+                table.on('checkbox(myTable)', function(obj){
+                    console.log(obj.checked); //当前是否选中状态
+                    console.log(obj.data); //选中行的相关数据
+                    console.log(obj.type); //如果触发的是全选，则为：all，如果触发的是单选，则为：one
+
+                    var checkStatus = table.checkStatus('myTableId')
+                        ,data = checkStatus.data;
+
+                    let html="已点菜单：";
+                    let total =0;
+                    for(var i in data){
+                        var num = data[i].num;
+                        if(!num){
+                            num=1;
+                        }
+                        html+=data[i].name+"*"+num;
+                        total+=data[i].price*num;
+                    }
+                    $("#total_price").html("合计："+total+"元");
+                    $("#selDiv").html(html);
+
+                });
+
+            });
+
+
+            function addOrderMaster(){
+                var is_create = false;
+
+                if($("#order_id").val()){
+                    if(confirm("今天已存在主订单，是否还要再新建一主订单？")){
+                        is_create=true;
+                    }else{
+                        is_create=false;
+                    }
+                }else{
+                    if(confirm("是否确认增加新的主订单?")) {
+                        is_create = true;
+                    }
+                }
+
+                if(is_create){
+                    $.ajax({
+                        url: "addOrderMaster.do",
+                        type: "POST",
+                        data:"",
+                        success: function(data){
+                            location.reload();
+                        }
+                    });
+                }
+
+
+
+
+
+
+
+
+            }
+
+
+            $("#usercode").val($("#usercode_hidden").val());
+
+
+        </script>
+</body>
+
+</html>

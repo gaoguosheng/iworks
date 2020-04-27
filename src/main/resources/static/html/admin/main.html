@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>SpringBoot后台管理</title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body>
+
+<div style="padding: 20px; background-color: #F2F2F2;">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header"><b>本月目标TOP5</b>&nbsp;&nbsp;<button class="layui-btn layui-btn-xs layui-btn-normal" onclick="parent.active.tabAdd('目标看板','workgoal/search.do','workGoal');">更多</button></div>
+                <div class="layui-card-body" id="workGoalDiv" style="height: 200px;">
+
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header"><b>待办事项</b></div>
+                <div class="layui-card-body">
+                    <div id="" style="height: 200px;text-align: center">
+
+                        <div class="layui-row layui-col-space15">
+                            <div class="layui-col-md6">
+                                <div class="layui-card">
+                                    <div class="layui-card-header"><b>待完成目标</b></div>
+                                    <div class="layui-card-body">
+                                        <a href="#" onclick="parent.active.tabAdd('待完成目标','workgoal/index.do?isfinish=0&username='+parent.adminUsername.value,'workGoalUnFinish');"><span id="goalUnFinishCount"  class="layui-badge" style="font-size: large">0</span></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md6">
+                                <div class="layui-card">
+                                    <div class="layui-card-header"><b>待竣工任务</b></div>
+                                    <div class="layui-card-body">
+                                        <a href="#"  onclick="parent.active.tabAdd('待竣工任务','cmswork/index.do?isfinish=0&name='+parent.adminUsername.value,'workUnFinish');"><span id="workUnFinishCount"  class="layui-badge" style="font-size: large">0</span></a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="layui-col-md6">
+                                <div class="layui-card">
+                                    <div class="layui-card-header">待解决bug</div>
+                                    <div class="layui-card-body">
+                                        <a href="#"  onclick="parent.active.tabAdd('待解决bug','cmswork/bug.do?isfinish=0&name='+parent.adminUsername.value,'bugUnFinish');"><span id="bugUnFinishCount"  class="layui-badge" style="font-size: large">0</span></a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="layui-col-md6">
+                                <div class="layui-card">
+                                    <div class="layui-card-header"><b>待解决问题</b></div>
+                                    <div class="layui-card-body">
+                                        <a href="#"  onclick="parent.active.tabAdd('待解决问题','problem/index.do?isfinish=0&username='+parent.adminUsername.value,'problemUnFinish');"><span id="problemUnFinishCount"  class="layui-badge" style="font-size: large">0</span></a>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header"><b>任务总览</b><span id="dateRange"></span>
+                    <button class="layui-btn layui-btn-xs layui-btn-normal" onclick="loadFreeTable({datestart:getLastWeekStartDate(),dateend:getLastWeekEndDate()});">上周</button>
+                    <button class="layui-btn layui-btn-xs layui-btn-normal" onclick="loadFreeTable({datestart:getWeekStartDate(),dateend:getWeekEndDate()});">本周</button>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="cmsWorkTable" lay-filter="cmsWorkTable"></table>
+
+                    <script type="text/html" id="checkDay1">
+                        {{ d.day0 > 0 ? d.day0 : '<span style="color: red">空闲</span>' }}
+                    </script>
+                    <script type="text/html" id="checkDay2">
+                        {{ d.day1 > 0 ? d.day1 : '<span style="color: red">空闲</span>' }}
+                    </script>
+                    <script type="text/html" id="checkDay3">
+                        {{ d.day2 > 0 ? d.day2 : '<span style="color: red">空闲</span>' }}
+                    </script>
+                    <script type="text/html" id="checkDay4">
+                        {{ d.day3 > 0 ? d.day3 : '<span style="color: red">空闲</span>' }}
+                    </script>
+                    <script type="text/html" id="checkDay5">
+                        {{ d.day4 > 0 ? d.day4: '<span style="color: red">空闲</span>' }}
+                    </script>
+                    <script type="text/html" id="checkDay6">
+                        {{ d.day5 > 0 ? d.day5: '<span style="color: red">空闲</span>' }}
+                    </script>
+                    <script type="text/html" id="checkDay7">
+                        {{ d.day6 > 0 ? d.day6: '<span style="color: red">空闲</span>' }}
+                    </script>
+
+
+
+
+
+
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header"><b>趋势分析</b></div>
+                <div class="layui-card-body">
+                    <div id="weeksTotalContainer" style="height: 200px;"></div>
+                    <div id="weeksProblemTotalContainer" style="height: 200px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header"><b>工作量分配</b></div>
+                <div class="layui-card-body">
+                    <div id="worksTotalContainer" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+        <!--<div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header"><b>问题分析</b></div>
+                <div class="layui-card-body">
+                    <div id="problemCauseTotalContainer" style="height: 200px;"></div>
+                </div>
+            </div>
+        </div>-->
+
+
+    </div>
+</div>
+
+
+
+
+
+ <script src="../../lib/jquery/jquery.js" ></script>
+<script src="../../lib/layui/layui.js" charset="utf-8"></script>
+<script src="../../lib/comm.js?v=1.0.0"></script>
+<script src="../../lib/echarts/echarts.min.js"></script>
+<script>
+
+    var params={datestart:getWeekStartDate(),dateend:getWeekEndDate()};
+    var table;
+    var form;
+    var element;
+
+
+    layui.use('element', function(){
+        var $ = layui.jquery;
+        element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+    });
+
+    layui.use('table', function() {
+        table = layui.table
+            , form = layui.form;
+        var $ = layui.jquery
+            ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+        loadFreeTable(params);//加载表格数据
+
+
+
+    });
+
+    function loadFreeTable(params){
+        $("#dateRange").html("（"+params.datestart+"~"+params.dateend+"）");
+        table.render({
+            id:'cmswork'
+            ,skin: 'line'
+            ,even: true
+            ,size: 'sm'
+            ,elem: '#cmsWorkTable'
+            ,url:'cmswork/freeStatus.do'
+            ,where:params
+            ,cols: [[
+                {type:'numbers'}
+                ,{field:'orgname', title:'组织',width:100}
+                ,{field:'username', title:'姓名',width:70}
+                ,{field:'monday', title: '周一',templet: '#checkDay1', unresize: true,width:60}
+                ,{field:'tuesday', title: '周二',templet: '#checkDay2', unresize: true,width:60}
+                ,{field:'wednesday', title: '周三',templet: '#checkDay3', unresize: true,width:60}
+                ,{field:'thursday', title: '周四',templet: '#checkDay4', unresize: true,width:60}
+                ,{field:'friday', title: '周五',templet: '#checkDay5', unresize: true,width:60}
+                ,{field:'saturday', title: '周六',templet: '#checkDay6', unresize: true,width:60}
+                ,{field:'sunday', title: '周日',templet: '#checkDay7', unresize: true,width:60}
+                ,{field:'percent', title:'竣工进度',width:100,templet: function(d){
+                    var str = 0;
+                    if(d.totalcount>0){
+                        str =d.totalfinishcount/d.totalcount*100
+                        str=str.toString().match(/^\d+(?:\.\d{0,1})?/);
+                    }
+                    var html = "";
+                    html+="<div class=\"layui-progress layui-progress-big\" lay-showpercent=\"true\" >";
+                    html+="<div class=\"layui-progress-bar layui-bg-red\" lay-percent=\""+str+"%\" ></div>";
+                    return html;
+                }}
+                ,{field:'totalcount', title:'本周任务',width:80}
+                ,{field:'totalfinishcount', title:'本周竣工',width:80}
+                ,{field:'freedays', title:'空闲天数',width:100,sort:true}
+            ]]
+            ,page: false
+            ,height: '380px'
+            ,done: function(res, curr, count){
+                element.init();
+            }
+            ,initSort: {field:'freedays', type:'desc'}
+        });
+
+        loadWorksTotal(params);//当周工作量统计
+
+        //loadProblemCauseTotal(params);//当周问题原因分析
+
+
+
+
+    }
+
+
+
+
+    function loadWeekTotal(){
+        $.ajax({
+            url: "cmswork/weekTotal.do",
+            type: "POST",
+            data:{},
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var xdata= new Array();
+                var ydata1=new Array();
+                var ydata2=new Array();
+                for(i in data){
+                    xdata[i]=data[i].weeks;
+                    ydata1[i]=data[i].counter;
+                    ydata2[i]=data[i].finish_counter;
+                }
+                load_line_charts("","weeksTotalContainer",xdata,ydata1,ydata2);
+
+            }
+        });
+    }
+
+
+    function load_line_charts(title,id,xdata,ydata1,ydata2){
+        var dom = document.getElementById(id);
+        var myChart = echarts.init(dom);
+        var app = {};
+        var option = null;
+        option = {
+            title: {
+                text: title
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data:['任务数量','竣工数量']
+            },
+            toolbox: {
+                show: false,
+                feature: {
+                    dataZoom: {
+                        yAxisIndex: 'none'
+                    },
+                    dataView: {readOnly: false},
+                    magicType: {type: ['line', 'bar']},
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            xAxis:  {
+                type: 'category',
+                boundaryGap: false,
+                data: xdata,
+                axisLabel: {
+                    formatter: '{value} 周'
+                }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    formatter: '{value} '
+                }
+            },
+            series: [
+                {
+                    name:'任务数量',
+                    type:'line',
+                    data:ydata1,
+                    markPoint: {
+                        data: [
+                            {type: 'max', name: '最大值'},
+                            {type: 'min', name: '最小值'}
+                        ]
+                    },
+                    markLine: {
+                        data: [
+                            {type: 'average', name: '平均值'}
+                        ]
+                    }
+                },
+                {
+                    name:'竣工数量',
+                    type:'line',
+                    data:ydata2,
+                    markPoint: {
+                        data: [
+                            {type: 'max', name: '最大值'},
+                            {type: 'min', name: '最小值'}
+                        ]
+                    },
+                    markLine: {
+                        data: [
+                            {type: 'average', name: '平均值'}
+                        ]
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+
+
+    function load_bar_charts(id,title,xdata,ydata,ydata2,ydata3,ydata4){
+        var dom = document.getElementById(id);
+        var myChart = echarts.init(dom);
+        var app = {};
+        option = null;
+        option = {
+            tooltip : {
+                trigger: 'axis',
+                axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                    type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            legend: {
+                data:['工作量','本周未竣工量','本周竣工量','遗留竣工量','遗留未竣工量']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis : [
+                {
+                    type : 'category',
+                    data : xdata,
+                    axisLabel:{
+                        interval:0,//横轴信息全部显示
+                        formatter:function(value)
+                        {
+                            return value.split("").join("\n");
+                        }
+                    }
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value'
+                }
+            ],
+            series : [
+                {
+                    name:'本周未竣工量',
+                    type:'bar',
+                    stack: '工作量',
+                    data:ydata,
+                    label:{
+                        normal:{
+                            show:true
+                        }
+                    }
+                },
+                {
+                    name:'本周竣工量',
+                    type:'bar',
+                    stack: '工作量',
+                    data:ydata2,
+                    label:{
+                        normal:{
+                            show:true
+                        }
+                    }
+                },
+                {
+                    name:'遗留竣工量',
+                    type:'bar',
+                    stack: '工作量',
+                    data:ydata3,
+                    label:{
+                        normal:{
+                            show:true
+                        }
+                    }
+                }
+                ,
+                {
+                    name:'遗留未竣工量',
+                    type:'bar',
+                    stack: '工作量',
+                    data:ydata4,
+                    label:{
+                        normal:{
+                            show:true
+                        }
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+
+
+    function loadWorksTotal(params){
+        $.ajax({
+            url: "cmswork/freeStatus.do",
+            type: "POST",
+            data:params,
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var data = data.data;
+                var xdata= new Array();
+                var ydata=new Array();
+                var ydata2=new Array();
+                var ydata3=new Array();
+                var ydata4=new Array();
+                for(i in data){
+                    xdata[i]=data[i].username;
+                    ydata[i]=data[i].totalcount-data[i].finishcount;
+                    ydata2[i]=data[i].finishcount;
+                    ydata3[i]=data[i].totalfinishcount-data[i].finishcount;
+                    ydata3[i]=ydata3[i]<0?0:ydata3[i];
+                    ydata4[i]=data[i].unfinishcount-ydata[i];
+                    ydata4[i]=ydata4[i]<0?0:ydata4[i];
+                }
+                load_bar_charts("worksTotalContainer","人员工作量",xdata,ydata,ydata2,ydata3,ydata4);
+            }
+        });
+    }
+
+    function loadWeekProblemTotal(){
+        $.ajax({
+            url: "problem/weekTotal.do",
+            type: "POST",
+            data:{},
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var xdata= new Array();
+                var ydata1=new Array();
+                var ydata2=new Array();
+                for(i in data){
+                    xdata[i]=data[i].weeks;
+                    ydata1[i]=data[i].counter;
+                    ydata2[i]=data[i].finish_count;
+                }
+                load_line_charts("","weeksProblemTotalContainer",xdata,ydata1,ydata2);
+            }
+        });
+    }
+
+    function loadProblemCauseTotal(params){
+        $.ajax({
+            url: "problem/causeTotal.do",
+            type: "POST",
+            data:params,
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var xdata= new Array();
+                var ydata=new Array();
+                for(i in data){
+                    xdata[i]=data[i].name;
+                    ydata[i]={value:data[i].counter,name:data[i].name};
+                }
+                load_pie_charts("问题原因分析","problemCauseTotalContainer",xdata,ydata);
+            }
+        });
+    }
+
+    function load_pie_charts(title,id,xdata,ydata){
+        var dom = document.getElementById(id);
+        var myChart = echarts.init(dom);
+        var app = {};
+        option = null;
+        option = {
+            title : {
+                text: title,
+                x:'center'
+            },
+            tooltip : {
+                trigger: 'item',
+                formatter: "{a} <br/>{b} : {c} ({d}%)"
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                data: xdata
+            },
+            series : [
+                {
+                    name: '问题原因',
+                    type: 'pie',
+                    radius : '55%',
+                    center: ['50%', '60%'],
+                    label: {
+                        normal: {
+                            show: true,
+                            formatter: '{b}: {c}({d}%)'
+                        }
+                    },
+                    data:ydata,
+                    itemStyle: {
+                        emphasis: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+
+
+    /**
+     * 查询当月目标
+     * */
+    function queryMonthGoal(){
+        $.ajax({
+            url: "workgoal/queryMonthGoal.do",
+            type: "POST",
+            data:{},
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var html="<table class=\"layui-table\" lay-size=\"sm\" lay-even=\"\" lay-skin=\"line\">";
+                html+="<thead><tr><th>目标</th><th>优先级</th><th>计划日期</th><th>负责人</th><th>完成进度%</th></tr></thead>";
+                for(var i in data){
+                    html+="<tr>";
+                    html+="<td class='layui-table-cell'>"+data[i].goalname+"</td>";
+                    html+="<td class='layui-table-cell'>"+data[i].priority+"</td>";
+                    html+="<td class='layui-table-cell'>"+data[i].plandate+"</td>";
+                    html+="<td class='layui-table-cell'>"+data[i].tousername+"</td>";
+                    html+="<td class='layui-table-cell'>"+data[i].schedule+"</td>";
+                    html+="</tr>";
+                }
+                html+="</table>";
+                $("#workGoalDiv").html(html);
+            }
+        });
+    }
+
+
+    /**
+     * 查询当月目标
+     * */
+    function countUnfinishWorks(){
+        $.ajax({
+            url: "workgoal/countUnfinishWorks.do",
+            type: "POST",
+            data:{},
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                for(var i in data){
+                    if(data[i].worktype=="goal"){
+                        $("#goalUnFinishCount").html(data[i].counter);
+                    }else if(data[i].worktype=="work"){
+                        $("#workUnFinishCount").html(data[i].counter);
+                    }else if(data[i].worktype=="problem"){
+                        $("#problemUnFinishCount").html(data[i].counter);
+                    }else if(data[i].worktype=="bug"){
+                        $("#bugUnFinishCount").html(data[i].counter);
+                    }
+                }
+
+            }
+        });
+    }
+
+    $(function(){
+        loadWeekTotal();//加载周统计
+
+        loadWeekProblemTotal();//加载问题周统计
+
+        queryMonthGoal();//目标看板
+
+        countUnfinishWorks();//待办事项
+    });
+
+
+
+
+</script>
+
+</body>
+
+
+
+</html>

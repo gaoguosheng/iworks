@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body">
+
+
+        <!-- 内容主体区域 -->
+        <div style="padding: 15px;">
+            <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">分类</label>
+                    <div class="layui-input-inline">
+                        <select name="category" >
+                            <option value="">全部</option>
+                            <option th:each="d,i : ${categorys}" th:value="${d.code}" th:text="${d.name}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">严重级别</label>
+                    <div class="layui-input-inline">
+                        <select name="severity" >
+                            <option value="">全部</option>
+                            <option th:each="d,i : ${severitys}" th:value="${d.code}" th:text="${d.name}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">原因类别</label>
+                    <div class="layui-input-inline">
+                        <select name="causetype" >
+                            <option value="">全部</option>
+                            <option th:each="d,i : ${causetypes}" th:value="${d.code}" th:text="${d.name}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">摘要</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="title"  id="title" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">日期范围</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" id="daterange" name="daterange" placeholder=" - ">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">是否解决</label>
+                    <div class="layui-input-inline">
+                        <select name="isfinish">
+                            <option value="">全部</option>
+                            <option value="1">解决</option>
+                            <option value="0">未解决</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">查询</button>
+                        <button class="layui-btn" lay-submit="" lay-filter="export">导出</button>
+                    </div>
+                </div>
+            </div>
+            </form>
+
+
+            <table class="layui-hide" id="myTable" lay-filter="myTable"></table>
+
+            <script type="text/html" id="checkIsFinish">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="isfinish" value="{{d.id}}" title="解决"  {{ d.isfinish == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+
+        </div>
+
+
+<script src="../../../lib/jquery/jquery.js" ></script>
+<script src="../../../lib/layui/layui.js" charset="utf-8"></script>
+        <script src="../../../lib/comm.js" ></script>
+<script>
+    var params;
+    var table;
+    var form;
+    var layer;
+    layui.use('layer', function(){
+        layer = layui.layer;
+    });
+
+    function loadTable(){
+        table.render({
+            even: true, //开启隔行背景
+            id:'myTableId'
+            ,elem: '#myTable'
+            ,url:'queryAll.do'
+            ,where:params
+            ,cols: [[
+                {type:'numbers'}
+                ,{field:'createdate', title:'日期',sort: true,width:110}
+                ,{field:'createusername', title:'创建人',width:110}
+                ,{field:'title', title:'摘要',width:300,event: 'showDetail', style:'cursor: pointer;color:blue'}
+                ,{field:'categoryname', title:'分类',width:150}
+                ,{field:'severityname', title:'严重级别',width:150}
+                ,{field:'causetypename', title:'原因类别',width:150}
+                ,{field:'isfinish', title:'是否解决', templet:'#checkIsFinish',unresize:true,width:100}
+                ,{field:'tousername', title:'解决人',width:110}
+                ,{field:'finishdate', title:'解决日期',width:120}
+            ]]
+            ,page: true
+            ,limit:20
+            ,height: 'full-160'
+        });
+    }
+
+    /**
+     * 初始化
+     * */
+    function init(){
+
+        layui.use('laydate', function(){
+            var laydate = layui.laydate;
+            //日期范围
+            laydate.render({
+                elem: '#daterange'
+                ,range: true
+            });
+        });
+
+        layui.use('table', function(){
+                 table = layui.table
+                    ,form = layui.form;
+
+
+
+
+            loadTable();//加载表格数据
+
+            //监听单元格编辑
+            table.on('tool(myTable)', function(obj){
+                var value = obj.value //得到修改后的值
+                    ,data = obj.data //得到所在行所有键值
+                    ,field = obj.field; //得到字段
+                //layer.msg('[ID: '+ data.ID +'] ' + field.toLowerCase() + ' 字段更改为：'+ value);
+                if(obj.event === 'showDetail'){
+                    layer.open({title:'查看',type:2,content:"detail.html?id="+data.id,area:['100%','100%']
+                        ,btn: ['关闭']
+                        ,yes: function(index, layero){
+                            //按钮【按钮一】的回调
+                            layer.close(index);
+                        }
+                    });
+                }
+            });
+
+
+            //监听checkbox
+            form.on('checkbox(checkITem)', function(obj){
+                //layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                $.ajax({
+                    url: "update.do",
+                    type: "POST",
+                    data:"id="+this.value+"&"+this.name+"="+(obj.elem.checked?1:0),
+                    success: function(data){
+                        console.log(data);
+                        layer.msg("更新成功");
+                    }
+                });
+            });
+
+            var $ = layui.$, active = {
+                /**
+                 *删除业务
+                 * */
+                delAction: function(){ //获取选中数据
+                    var checkStatus = table.checkStatus('myTableId')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择删除的数据");
+                        return false;
+                    }
+                    layer.confirm('是否确认选择删除的数据？', function(index){
+                        //do something
+                        for (d in data){
+                            if(data[d].isfinish=="1"){
+                                layer.msg(data[d].taskname+"已解决,，不能删除");
+                                continue;
+                            }
+                            $.ajax({
+                                url: "del.do",
+                                type: "POST",
+                                data:"id="+data[d].id,
+                                success: function(data){
+                                    console.log(data);
+                                    loadTable();
+                                }
+                            });
+                        }
+                        layer.close(index);
+
+                    });
+
+                },
+                /**
+                 * 添加业务
+                 * */
+                addAction:function(){
+                    layer.open({type:2,content:"add.html",area:['640px','540px']});
+
+                },
+
+
+                /**
+                 * 修改业务
+                 * */
+                editAction:function(){
+                    var checkStatus = table.checkStatus('myTableId')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择修改的数据");
+                        return false;
+                    }
+                    if(data.length>1){
+                        layer.alert("只能选中一行数据进行修改");
+                        return false;
+                    }
+                     layer.open({type:2,content:"edit.html?id="+data[0].id,area:['640px','540px']});
+
+            },
+
+                /**
+                 * 指派业务
+                 * */
+                toAction:function(){
+                    var checkStatus = table.checkStatus('myTableId')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择要指派的人员");
+                        return false;
+                    }
+                    if(data.length>1){
+                        layer.alert("只能选中一名指派人员");
+                        return false;
+                    }
+                    layer.open({type:2,content:"touser.html?id="+data[0].id,area:['900px','480px']});
+                }
+            };
+
+            $('.btn-action .layui-btn').on('click', function(){
+                var type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+
+            //监听提交
+            form.on('submit(search)', function(data){
+                /*layer.alert(JSON.stringify(data.field), {
+                    title: '最终的提交信息'
+                });*/
+                params=data.field;
+
+                loadTable();
+                return false;
+            });
+
+            //监听提交
+            form.on('submit(export)', function(data){
+                var json = JSON.stringify(data.field);
+                var querystr = json2Get(json);
+                window.open("export.do?"+querystr);
+                return false;
+            });
+
+        });
+    }
+
+    init();
+
+</script>
+</body>
+
+</html>

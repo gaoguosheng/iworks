@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.sys.dao.PermissionMapper" >
+
+    <select id="query" resultType="com.ggs.admin.module.sys.model.PermissionModel" parameterType="com.ggs.admin.module.sys.model.PermissionModel">
+        select * from SYS_PERMISSION order by orderno
+    </select>
+
+    <update id="update"  parameterType="com.ggs.admin.module.sys.model.PermissionModel">
+          update  SYS_PERMISSION  set name=#{name},descritpion=#{descritpion},url=#{url},pid=#{pid},orderno=#{orderno} where id=#{id}
+    </update>
+
+    <update id="add"  parameterType="com.ggs.admin.module.sys.model.PermissionModel">
+          insert into SYS_PERMISSION (id,name,pid) values(#{id},#{name},#{pid})
+    </update>
+
+    <update id="del"  parameterType="com.ggs.admin.module.sys.model.PermissionModel">
+       delete from  SYS_PERMISSION  where id=#{id}
+    </update>
+
+    <select id="getNewPermissionId" resultType="Integer">
+        select SEQ_SYS_PERMISSION.nextval from dual
+    </select>
+
+</mapper>

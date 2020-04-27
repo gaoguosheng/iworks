@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body">
+
+
+        <!-- 内容主体区域 -->
+        <div style="padding: 15px;">
+            <form class="layui-form" action="">
+
+                <div class="layui-form-item">
+                    <input id="usercode" name="usercode" type="hidden" th:value="${admin.usercode}"/>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">日期范围</label>
+                        <div class="layui-input-inline">
+                            <input type="text" class="layui-input" id="daterange" name="daterange" placeholder=" - ">
+                        </div>
+                    </div>
+                    <label class="layui-form-label">主订单</label>
+                    <div class="layui-input-inline">
+                        <select id="order_id" name="order_id">
+                            <option value="">全部</option>
+                            <option  th:each="o,i : ${orderList}" th:text="${o.ordername}" th:value="${o.id}"></option>
+                        </select>
+                    </div>
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">查询</button>
+                    </div>
+                </div>
+            </div>
+            </form>
+
+            <div class="layui-btn-group btn-action">
+                <button class="layui-btn"  data-type="addAction">订餐</button>
+                <button class="layui-btn"  data-type="addOrderAction" style="display: none">新增主订单</button>
+                <button class="layui-btn" data-type="delAction">删除</button>
+                <button class="layui-btn" data-type="addLastAction" >再来一单</button>
+            </div>
+            <table class="layui-hide" id="myTable" lay-filter="myTable"></table>
+
+
+        </div>
+
+
+<script src="../../../lib/jquery/jquery.js" ></script>
+<script src="../../../lib/layui/layui.js" charset="utf-8"></script>
+
+<script>
+    var params={usercode:$("#usercode").val()};
+    var table;
+    var form;
+    var layer;
+    layui.use('layer', function(){
+        layer = layui.layer;
+    });
+
+    function loadTable(){
+        table.render({
+            even: true, //开启隔行背景
+            id:'myTableId'
+            ,elem: '#myTable'
+            ,url:'query.do'
+            ,where:params
+            ,totalRow: true
+            ,cols: [[
+                {type:'numbers'}
+                ,{type: 'checkbox'}
+                ,{field:'order_date', title:'日期',width:110,totalRowText: '合计'}
+                ,{field:'ordername', title:'主订单',width:200}
+                ,{field:'product_name', title:'商品',width:300}
+                ,{field:'price', title:'单价',width:100}
+                ,{field:'num', title:'数量',width:100}
+                ,{field:'total_price', title:'小计',width:100,totalRow: true}
+            ]]
+            ,page: true
+            ,limit:20
+            ,height: 'full-120'
+            ,done : function(res, curr, count) {
+                merge(res);
+            }
+        });
+    }
+
+    /**
+     * 初始化
+     * */
+    function init(){
+
+        layui.use('laydate', function(){
+            var laydate = layui.laydate;
+            //日期范围
+            laydate.render({
+                elem: '#daterange'
+                ,range: true
+            });
+        });
+
+        layui.use('table', function(){
+                 table = layui.table
+                    ,form = layui.form;
+
+
+
+
+            loadTable();//加载表格数据
+
+
+
+            var $ = layui.$, active = {
+                /**
+                 *删除业务
+                 * */
+                delAction: function(){ //获取选中数据
+                    var checkStatus = table.checkStatus('myTableId')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择删除的菜单");
+                        return false;
+                    }
+                    layer.confirm('是否确认选择删除的菜单？', function(index){
+                        //do something
+                        for (d in data){
+                            $.ajax({
+                                url: "del.do",
+                                type: "POST",
+                                data:"id="+data[d].id,
+                                success: function(data){
+                                    console.log(data);
+                                    loadTable();
+                                }
+                            });
+                        }
+                        layer.close(index);
+
+                    });
+
+                },
+                /**
+                 * 添加业务
+                 * */
+                addAction:function(){
+                    layer.open({title:'准备订餐',type:2,content:"add.html",area:['80%','100%']
+                        ,btn: ['下单','关闭']
+                        ,yes: function(index, layero){
+                            //按钮【按钮一】的回调
+                            $(window.frames[0].document).find("#saveBtn").click();
+                            //layer.close(index);
+                            //loadTable();
+                        }
+                        ,btn2: function(index, layero){
+                            //按钮【按钮一】的回调
+                        }
+                    });
+
+                },
+
+
+                /**
+                 *再来一单
+                 * */
+                addLastAction: function(){ //获取选中数据
+                    var checkStatus = table.checkStatus('myTableId')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择菜单");
+                        return false;
+                    }
+                    for (d in data){
+                        $.ajax({
+                            url: "addLast.do",
+                            type: "POST",
+                            data:{id:data[d].id,createuser:$("#usercode").val()},
+                            success: function(data){
+                                console.log(data);
+                                loadTable();
+                            }
+                        });
+                    }
+                    layer.close(index);
+
+                },
+
+                /**
+                 * 添加业务
+                 * */
+                addOrderAction:function(){
+
+                    layer.confirm('是否确认新建主订单？', function(index){
+                        //do something
+
+                        $.ajax({
+                            url: "addOrderMaster.do",
+                            type: "POST",
+                            data:"",
+                            success: function(data){
+                                console.log(data);
+                                layer.msg("操作成功");
+                                layer.close(index);
+
+                            }
+                        });
+
+
+
+                    });
+
+
+                },
+
+            };
+
+            $('.btn-action .layui-btn').on('click', function(){
+                var type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+
+            //监听提交
+            form.on('submit(search)', function(data){
+                /*layer.alert(JSON.stringify(data.field), {
+                    title: '最终的提交信息'
+                });*/
+                params=data.field;
+
+                loadTable();
+                return false;
+            });
+
+        });
+    }
+
+
+    function merge(res) {
+
+        var data = res.data;
+        var mergeIndex = 0;//定位需要添加合并属性的行数
+        var mark = 1; //这里涉及到简单的运算，mark是计算每次需要合并的格子数
+        var columsName = ['order_date', 'ordername'];//需要合并的列名称
+        var columsIndex = [2, 3];//需要合并的列索引值
+
+        for (var k = 0; k < columsName.length; k++) { //这里循环所有要合并的列
+            var trArr = $(".layui-table-body>.layui-table").find("tr");//所有行
+            for (var i = 1; i < res.data.length; i++) { //这里循环表格当前的数据
+                var tdCurArr = trArr.eq(i).find("td").eq(columsIndex[k]);//获取当前行的当前列
+                var tdPreArr = trArr.eq(mergeIndex).find("td").eq(columsIndex[k]);//获取相同列的第一列
+
+                if (data[i][columsName[k]] === data[i - 1][columsName[k]]) { //后一行的值与前一行的值做比较，相同就需要合并
+                    mark += 1;
+                    tdPreArr.each(function () {//相同列的第一列增加rowspan属性
+                        $(this).attr("rowspan", mark);
+                    });
+                    tdCurArr.each(function () {//当前行隐藏
+                        $(this).css("display", "none");
+                    });
+                } else {
+                    mergeIndex = i;
+                    mark = 1;//一旦前后两行的值不一样了，那么需要合并的格子数mark就需要重新计算
+                }
+            }
+            mergeIndex = 0;
+            mark = 1;
+        }
+    }
+
+
+    init();
+
+</script>
+</body>
+
+</html>

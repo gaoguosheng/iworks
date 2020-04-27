@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>SpringBoot后台管理</title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body>
+
+<div id="weeksTotalContainer" style="height: 250px;"></div>
+
+ <script src="../../lib/jquery/jquery.js" ></script>
+<script src="../../lib/layui/layui.js" charset="utf-8"></script>
+<script src="../../lib/comm.js?v=1.0.0"></script>
+<script src="../../lib/echarts/echarts.min.js"></script>
+<script>
+
+    var params={datestart:getWeekStartDate(),dateend:getWeekEndDate()};
+    var table;
+    var form;
+    var element;
+
+
+    layui.use('element', function(){
+        var $ = layui.jquery;
+        element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+    });
+
+    layui.use('table', function() {
+        table = layui.table
+            , form = layui.form;
+        var $ = layui.jquery
+            ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+    });
+
+
+
+    function loadWeekTotal(){
+        $.ajax({
+            url: "trend.do",
+            type: "POST",
+            data:{},
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var xdata= new Array();
+                var ydata1=new Array();
+                var ydata2=new Array();
+                for(i in data){
+                    xdata[i]=data[i].weeks;
+                    ydata1[i]=data[i].counter;
+                    ydata2[i]=data[i].finish_counter;
+                }
+                load_line_charts("任务趋势","weeksTotalContainer",xdata,ydata1,ydata2);
+
+            }
+        });
+    }
+
+
+    function load_line_charts(title,id,xdata,ydata1,ydata2){
+        var dom = document.getElementById(id);
+        var myChart = echarts.init(dom);
+        var app = {};
+        var option = null;
+        option = {
+            title: {
+                text: title
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data:['任务数量','竣工数量']
+            },
+            toolbox: {
+                show: false,
+                feature: {
+                    dataZoom: {
+                        yAxisIndex: 'none'
+                    },
+                    dataView: {readOnly: false},
+                    magicType: {type: ['line', 'bar']},
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            xAxis:  {
+                type: 'category',
+                boundaryGap: false,
+                data: xdata,
+                axisLabel: {
+                    formatter: '{value} 周'
+                }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    formatter: '{value} '
+                }
+            },
+            series: [
+                {
+                    name:'任务数量',
+                    type:'line',
+                    data:ydata1,
+                    markPoint: {
+                        data: [
+                            {type: 'max', name: '最大值'},
+                            {type: 'min', name: '最小值'}
+                        ]
+                    },
+                    markLine: {
+                        data: [
+                            {type: 'average', name: '平均值'}
+                        ]
+                    }
+                },
+                {
+                    name:'竣工数量',
+                    type:'line',
+                    data:ydata2,
+                    markPoint: {
+                        data: [
+                            {type: 'max', name: '最大值'},
+                            {type: 'min', name: '最小值'}
+                        ]
+                    },
+                    markLine: {
+                        data: [
+                            {type: 'average', name: '平均值'}
+                        ]
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+
+    $(function(){
+        var h = $(window).height() ;
+        $("#weeksTotalContainer").css("height",h+"px");
+        loadWeekTotal();//加载周统计
+    });
+
+
+
+</script>
+</body>
+
+</html>

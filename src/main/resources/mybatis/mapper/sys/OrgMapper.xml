@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.sys.dao.OrgMapper" >
+
+    <select id="query" resultType="com.ggs.admin.module.sys.model.OrgModel" parameterType="com.ggs.admin.module.sys.model.OrgModel">
+        select t.* from SYS_ORG  t where 1=1
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.id,queryChildOrg(${orgid}))
+        </if>
+        order by id
+    </select>
+
+    <update id="update"  parameterType="com.ggs.admin.module.sys.model.OrgModel">
+          update  SYS_ORG  set name=#{name},pid=#{pid} where id=#{id}
+    </update>
+
+    <update id="add"  parameterType="com.ggs.admin.module.sys.model.OrgModel">
+          insert into SYS_ORG (id,name,pid) values(#{id},#{name},#{pid})
+    </update>
+
+    <update id="del"  parameterType="com.ggs.admin.module.sys.model.OrgModel">
+       delete from  SYS_ORG  where id=#{id}
+    </update>
+
+    <select id="getNewId" resultType="Integer">
+        select SEQ_SYS_ORG.nextval from dual
+    </select>
+
+</mapper>

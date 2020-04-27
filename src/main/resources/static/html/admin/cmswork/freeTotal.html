@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>SpringBoot后台管理</title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body>
+
+<div class="layui-card">
+    <div class="layui-card-header"><b>资源分析</b><span id="dateRange"></span>
+        <button class="layui-btn" onclick="loadFreeTable({datestart:getLastWeekStartDate(),dateend:getLastWeekEndDate()});">上周</button>
+        <button class="layui-btn" onclick="loadFreeTable({datestart:getWeekStartDate(),dateend:getWeekEndDate()});">本周</button>
+    </div>
+    <div class="layui-card-body">
+        <table class="layui-hide" id="cmsWorkTable" lay-filter="cmsWorkTable"></table>
+
+        <script type="text/html" id="checkDay1">
+            {{ d.day0 > 0 ? d.day0 : '<span style="color: red">空闲</span>' }}
+        </script>
+        <script type="text/html" id="checkDay2">
+            {{ d.day1 > 0 ? d.day1 : '<span style="color: red">空闲</span>' }}
+        </script>
+        <script type="text/html" id="checkDay3">
+            {{ d.day2 > 0 ? d.day2 : '<span style="color: red">空闲</span>' }}
+        </script>
+        <script type="text/html" id="checkDay4">
+            {{ d.day3 > 0 ? d.day3 : '<span style="color: red">空闲</span>' }}
+        </script>
+        <script type="text/html" id="checkDay5">
+            {{ d.day4 > 0 ? d.day4: '<span style="color: red">空闲</span>' }}
+        </script>
+        <script type="text/html" id="checkDay6">
+            {{ d.day5 > 0 ? d.day5: '<span style="color: red">空闲</span>' }}
+        </script>
+        <script type="text/html" id="checkDay7">
+            {{ d.day6 > 0 ? d.day6: '<span style="color: red">空闲</span>' }}
+        </script>
+
+
+
+
+
+
+    </div>
+</div>
+
+
+
+
+
+ <script src="../../lib/jquery/jquery.js" ></script>
+<script src="../../lib/layui/layui.js" charset="utf-8"></script>
+<script src="../../lib/comm.js?v=1.0.0"></script>
+<script src="../../lib/echarts/echarts.min.js"></script>
+<script>
+
+    var params={datestart:getWeekStartDate(),dateend:getWeekEndDate()};
+    var table;
+    var form;
+    var element;
+
+
+    layui.use('element', function(){
+        var $ = layui.jquery;
+        element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+    });
+
+    layui.use('table', function() {
+        table = layui.table
+            , form = layui.form;
+        var $ = layui.jquery
+            ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+        loadFreeTable(params);//加载表格数据
+
+
+
+    });
+
+    function loadFreeTable(params){
+        $("#dateRange").html("（"+params.datestart+"~"+params.dateend+"）");
+        table.render({
+            id:'cmswork'
+            ,even: true
+            ,elem: '#cmsWorkTable'
+            ,url:'freeTotal.do'
+            ,where:params
+            ,cols: [[
+                {type:'numbers'}
+                ,{field:'orgname', title:'组织',width:120}
+                ,{field:'username', title:'姓名',width:120}
+                ,{field:'monday', title: '周一',templet: '#checkDay1', unresize: true,width:80}
+                ,{field:'tuesday', title: '周二',templet: '#checkDay2', unresize: true,width:80}
+                ,{field:'wednesday', title: '周三',templet: '#checkDay3', unresize: true,width:80}
+                ,{field:'thursday', title: '周四',templet: '#checkDay4', unresize: true,width:80}
+                ,{field:'friday', title: '周五',templet: '#checkDay5', unresize: true,width:80}
+                ,{field:'saturday', title: '周六',templet: '#checkDay6', unresize: true,width:80}
+                ,{field:'sunday', title: '周日',templet: '#checkDay7', unresize: true,width:80}
+                ,{field:'percent', title:'竣工进度',width:120,templet: function(d){
+                    var str = 0;
+                    if(d.totalcount>0){
+                        str =d.totalfinishcount/d.totalcount*100
+                        str=str.toString().match(/^\d+(?:\.\d{0,1})?/);
+                    }
+                    var html = "";
+                    html+="<div class=\"layui-progress layui-progress-big\" lay-showpercent=\"true\" >";
+                    html+="<div class=\"layui-progress-bar layui-bg-red\" lay-percent=\""+str+"%\" ></div>";
+                    return html;
+                }}
+                ,{field:'totalcount', title:'本周任务',width:120,sort:true}
+                ,{field:'totalfinishcount', title:'本周竣工',width:120,sort:true}
+                ,{field:'freedays', title:'空闲天数',width:120,sort:true}
+            ]]
+            ,page: false
+            ,height: 'full-100'
+            ,done: function(res, curr, count){
+                element.init();
+            }
+            ,initSort: {field:'freedays', type:'desc'}
+        });
+
+
+
+
+
+    }
+
+
+
+
+
+
+</script>
+
+</body>
+
+
+
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body">
+
+
+        <!-- 内容主体区域 -->
+        <div style="padding: 15px;">
+            <form class="layui-form" action="">
+                <input type="hidden" id="m_isfinish" th:value="${model.isfinish}">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">负责人</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="name"  id="name" autocomplete="off" class="layui-input" th:value="${model.name}">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">任务单号</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="taskno"  id="taskno" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">任务名称</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="taskname"  id="taskname" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">日期范围</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" id="daterange" name="daterange" placeholder=" - ">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">是否竣工</label>
+                    <div class="layui-input-inline">
+                        <select id="isfinish" name="isfinish">
+                            <option value="">全部</option>
+                            <option value="1">竣工</option>
+                            <option value="0">未竣工</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">查询</button>
+                    </div>
+                </div>
+
+
+            </div>
+            </form>
+
+            <div class="layui-form">
+                <input id="usercode_hidden" type="hidden" th:value="${admin.usercode}"/>
+                <label class="layui-form-label">指派人员</label>
+                <div class="layui-input-inline">
+                    <select id="usercode" name="usercode" lay-verify="required" lay-search="">
+                        <option  th:each="o,i : ${userList}" th:text="${o.username}" th:value="${o.usercode}"></option>
+                    </select>
+                </div>
+                <div class="layui-input-inline">
+                    <div class="layui-btn-group btn-action">
+                        <button class="layui-btn"  data-type="addAction" style="display: none">增加</button>
+                        <button class="layui-btn" data-type="delAction" style="display: none">删除</button>
+                        <button class="layui-btn" data-type="toAction">指派</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <table class="layui-hide" id="cmsWorkTable" lay-filter="cmsWorkTable"></table>
+
+           <script type="text/html" id="checkDay1">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="monday" value="{{d.id}}" title=""  {{ d.monday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkDay2">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="tuesday" value="{{d.id}}" title=""  {{ d.tuesday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkDay3">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="wednesday" value="{{d.id}}" title=""  {{ d.wednesday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkDay4">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="thursday" value="{{d.id}}" title=""  {{ d.thursday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkDay5">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="friday" value="{{d.id}}" title=""  {{ d.friday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkDay6">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="saturday" value="{{d.id}}" title=""  {{ d.saturday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkDay7">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="sunday" value="{{d.id}}" title=""  {{ d.sunday == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+            <script type="text/html" id="checkIsFinish">
+                <!-- 这里的 checked 的状态只是演示 -->
+                <input type="checkbox" name="isfinish" value="{{d.id}}" title="竣工"  {{ d.isfinish == 1 ? 'checked' : '' }}  lay-filter="checkITem" />
+            </script>
+
+            <script type="text/html" id="planDateTpl">
+                <input type="text"  class="layui-input"  id="planDate{{d.id}}"  value="{{d.createdate}}" onfocus="laydate.render({elem: '#planDate{{d.id}}',min: -7
+    ,trigger: 'click',done: function(value, date, endDate){
+                update('{{d.id}}','createdate',value);
+                }
+                });" style="border: 0px;" >
+            </script>
+
+            <script type="text/html" id="planFinishDateTpl">
+                <input type="text"  class="layui-input"  id="planFinishDate{{d.id}}"  value="{{d.planfinishdate}}" onfocus="laydate.render({elem: '#planFinishDate{{d.id}}',min: -7
+    ,trigger: 'click',done: function(value, date, endDate){
+                update('{{d.id}}','planfinishdate',value);
+                }
+                });" style="border: 0px;" >
+            </script>
+
+        </div>
+
+
+<script src="../../../lib/jquery/jquery.js" ></script>
+<script src="../../../lib/layui/layui.js" charset="utf-8"></script>
+
+<script>
+    var params={task_type:"03",isfinish:$("#m_isfinish").val(),name:$("#name").val()};
+    var table;
+    var form;
+    function loadTable(){
+        table.render({
+            even: true, //开启隔行背景
+            id:'cmswork'
+            ,elem: '#cmsWorkTable'
+            ,url:'queryBug.do'
+            ,where:params
+            ,cols: [[
+                {type:'numbers'}
+                ,{type: 'checkbox'}
+                ,{field:'createdate', title:'安排日期',sort: true,width:120}
+                ,{field:'project_name', title:'所属项目', width:200}
+                ,{field:'taskno', title:'任务单号',width:100}
+                ,{field:'taskname', title: '任务名称',width:300}
+                ,{field:'tousername', title:'负责人',width:80}
+                ,{field:'planfinishdate', title:'计划完成日期',width:120,templet: '#planFinishDateTpl'}
+                ,{field:'isfinish', title:'是否竣工', templet:'#checkIsFinish',unresize:true,width:120}
+                ,{field:'remark', title:'完成情况', width:350,edit:'text'}
+            ]]
+            ,page: true
+            ,limit:20
+            ,height: 'full-160'
+        });
+    }
+
+    /**
+     * 初始化
+     * */
+    var laydate;
+    function init(){
+
+        layui.use('laydate', function(){
+            laydate= layui.laydate;
+            //日期范围
+            laydate.render({
+                elem: '#daterange'
+                ,range: true
+            });
+        });
+
+        layui.use('table', function(){
+                 table = layui.table
+                    ,form = layui.form;
+
+
+
+
+            loadTable();//加载表格数据
+
+            //监听单元格编辑
+            table.on('edit(cmsWorkTable)', function(obj){
+                var value = obj.value //得到修改后的值
+                    ,data = obj.data //得到所在行所有键值
+                    ,field = obj.field; //得到字段
+                //layer.msg('[ID: '+ data.ID +'] ' + field.toLowerCase() + ' 字段更改为：'+ value);
+                $.ajax({
+                    url: "updateBug.do",
+                    type: "POST",
+                    data:"id="+data.id+"&"+field.toLowerCase()+"="+value,
+                    success: function(data){
+                        console.log(data);
+                        layer.msg("更新成功");
+                    }
+                });
+            });
+
+
+
+            //监听checkbox
+            form.on('checkbox(checkITem)', function(obj){
+                //layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                $.ajax({
+                    url: "updateBug.do",
+                    type: "POST",
+                    data:"id="+this.value+"&"+this.name+"="+(obj.elem.checked?1:0),
+                    success: function(data){
+                        console.log(data);
+                        layer.msg("更新成功");
+                        loadTable();//加载表格数据
+                    }
+                });
+            });
+
+            var $ = layui.$, active = {
+                /**
+                 *删除业务
+                 * */
+                delAction: function(){ //获取选中数据
+                    var checkStatus = table.checkStatus('cmswork')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择删除的数据");
+                        return false;
+                    }
+                    layer.confirm('是否确认选择删除的数据？', function(index){
+                        //do something
+                        for (d in data){
+                            if(data[d].isfinish=="1"){
+                                layer.msg(data[d].taskname+"已竣工,，不能删除");
+                                continue;
+                            }
+                            $.ajax({
+                                url: "del.do",
+                                type: "POST",
+                                data:"id="+data[d].id,
+                                success: function(data){
+                                    console.log(data);
+                                    loadTable();
+                                }
+                            });
+                        }
+                        layer.close(index);
+
+                    });
+
+                },
+                /**
+                 * 添加业务
+                 * */
+                addAction:function(){
+                $.ajax({
+                    url: "add.do",
+                    type: "POST",
+                    data:"",
+                    success: function(data){
+                        console.log(data);
+                        loadTable();
+                    }
+                });
+
+            },
+                /**
+                 * 指派业务
+                 * */
+                toAction:function(){
+                    var checkStatus = table.checkStatus('cmswork')
+                        ,data = checkStatus.data;
+                    //layer.alert(JSON.stringify(data));
+                    if(!data || data.length==0){
+                        layer.alert("您还未选择数据");
+                        return false;
+                    }
+
+                    for(let i in data){
+                        $.ajax({
+                            url: "updateBug.do",
+                            type: "POST",
+                            data:{touser:$("#usercode").val(),id:data[i].id},
+                            success: function(data){
+                                console.log(data);
+                                loadTable();
+                            }
+                        });
+                    }
+
+                }
+            };
+
+            $('.btn-action .layui-btn').on('click', function(){
+                var type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+
+            //监听提交
+            form.on('submit(search)', function(data){
+                /*layer.alert(JSON.stringify(data.field), {
+                    title: '最终的提交信息'
+                });*/
+                params=data.field;
+
+                loadTable();
+                return false;
+            });
+
+        });
+    }
+
+    function update(id,key,value){
+        $.ajax({
+            url: "updateBug.do",
+            type: "POST",
+            data:"id="+id+"&"+key+"="+value,
+            success: function(data){
+                console.log(data);
+                layer.msg("更新成功");
+            }
+        });
+    }
+
+    $("#usercode").val($("#usercode_hidden").val());
+
+    init();
+
+</script>
+</body>
+
+</html>

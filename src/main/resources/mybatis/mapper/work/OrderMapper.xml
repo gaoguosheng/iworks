@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.work.dao.OrderMapper" >
+
+    <select id="queryTotal" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        select t.*,t2.username,t3.ordername
+         ,(select name from sys_org where id=${orgid} )orgname
+         from(
+        SELECT
+            t.order_id,
+            t.usercode ,
+            GROUP_CONCAT(CONCAT_WS('*',t.product_name,t.num))product_name,
+            sum(t.price*t.num)total_price
+        FROM
+             orders t
+        GROUP BY
+            t.order_id,
+            t.usercode)t,
+            sys_user t2,
+            orders_master t3
+            where t.usercode=t2.usercode
+            and t3.id=t.order_id
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.usercode,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+        </if>
+        <if test="order_id!=null and order_id!=''">
+            and order_id=#{order_id}
+        </if>
+
+            order by t.order_id desc,t.usercode
+    </select>
+
+    <select id="query" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        SELECT
+            t.*,t2.ordername,t.price*t.num total_price
+        FROM
+        ( SELECT date_format( t.createtime, '%Y-%m-%d' ) order_date, t.* FROM orders t ) t,orders_master t2
+
+        where 1=1
+        and t.order_id=t2.id
+        <if test="order_id!=null and order_id!=''">
+            and t.order_id=#{order_id}
+        </if>
+        <if test="usercode != null">AND t.usercode=#{usercode}</if>
+        <if test="datestart != null and datestart != ''">AND t.order_date <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.order_date <![CDATA[<=]]>#{dateend}</if>
+        order by order_date desc,t.id desc
+    </select>
+
+    <select id="queryProducts" resultType="HashMap">
+        SELECT
+            t.*
+        FROM
+        products t
+    </select>
+
+
+    <update id="add" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        insert into orders(createtime,usercode,username,product_id,num,product_name,price,order_id,createuser)
+        values( now(),#{usercode},#{username},#{product_id},#{num},#{product_name},#{price},#{order_id},#{createuser} )
+    </update>
+
+    <update id="addLast" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        insert into orders(createtime,usercode,username,product_id,num,product_name,price,order_id,createuser)
+        select now(),usercode,username,product_id,num,product_name,price,(select max(id) from orders_master),#{createuser}  from orders  where id=#{id}
+    </update>
+
+
+    <update id="del" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        delete from orders  where id=#{id}
+    </update>
+
+
+    <update id="addOrderMaster" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        insert into orders_master(ordername,createtime)
+        values(#{ordername},now())
+    </update>
+
+    <select id="queryOrders" resultType="HashMap">
+        SELECT
+            t.*,
+        date_format( t.createtime, '%Y-%m-%d' )order_date
+        FROM
+        orders_master t
+        where 1=1
+        <if test="order_date != null and order_date != ''">
+        AND date_format( t.createtime, '%Y-%m-%d' ) =#{order_date}
+        </if>
+        order by t.ordername desc
+    </select>
+
+    <select id="queryOrderCost" resultType="HashMap">
+        select t.*,t.workday_counter*20+t.weekend_counter*50 cost
+        ,(select name from sys_org where id=${orgid} )orgname
+        from(
+        select t.*,ifnull(t2.workday_counter,0)workday_counter,ifnull(t3.weekend_counter,0)weekend_counter,t4.username from(
+        select t.usercode,GROUP_CONCAT(t.order_date)date_list from(
+        SELECT distinct date_format( t.createtime, '%Y-%m-%d' )order_date, t.usercode FROM orders t
+        )t where 1=1
+        <if test="order_date!=null and order_date!=''">
+            and substr(t.order_date,1,7)=  #{order_date}
+        </if>
+        group by t.usercode)t
+        left join(
+        select t.usercode,count(*)workday_counter from(
+        SELECT distinct date_format( t.createtime, '%Y-%m-%d' ) order_date,WEEKDAY(t.createtime)order_day, t.usercode FROM orders t
+        )t where 1=1
+        <if test="order_date!=null and order_date!=''">
+            and substr(t.order_date,1,7)=  #{order_date}
+        </if>
+        <![CDATA[
+        and (t.order_day<=4 or t.order_date in (select custom_date from custom_date where type=1))
+        ]]>
+        group by t.usercode)t2 on t.usercode=t2.usercode
+        left join (
+        select t.usercode,count(*)weekend_counter from(
+        SELECT distinct date_format( t.createtime, '%Y-%m-%d' ) order_date,WEEKDAY(t.createtime)order_day, t.usercode FROM orders t
+        )t where 1=1
+        <if test="order_date!=null and order_date!=''">
+            and substr(t.order_date,1,7)=  #{order_date}
+        </if>
+        <![CDATA[
+        and ( t.order_day>4 or t.order_date in (select custom_date from custom_date where type=2))
+        ]]>
+        group by t.usercode)t3 on t.usercode=t3.usercode
+        left join sys_user t4 on t4.usercode=t.usercode)t
+        where 1=1
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.usercode,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+        </if>
+    </select>
+
+    <update id="addOther" parameterType="com.ggs.admin.module.work.model.OrderModel">
+        insert into orders(createtime,usercode,username,product_id,num,product_name,price,order_id,createuser)
+        select createtime,#{createuser},#{username},product_id,num,product_name,price,order_id,#{createuser}  from orders  where order_id=#{order_id} and usercode=#{usercode}
+    </update>
+
+</mapper>

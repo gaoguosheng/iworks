@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ggs.admin.module.work.dao.WorkGoalMapper" >
+
+    <select id="query" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.WorkGoalModel">
+        select t.* from(
+
+      SELECT
+        t.*,
+        t2.username tousername,
+        t3.username createusername,
+        t4.name orgname
+        FROM cms_work_goal  t
+        left join sys_user t2 on t.touser=t2.usercode
+        left join sys_user t3 on t.createuser=t3.usercode
+        left join sys_org t4 on t4.id=t3.orgid
+        where 1=1
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="username!=null and username!=''">
+            and t2.username like '%' ||  #{username} || '%'
+        </if>
+        <if test="goalname!=null and goalname!=''">
+            and t.goalname like '%' ||  #{goalname} || '%'
+        </if>
+        <if test="goalno!=null and goalno!=''">
+            and t.goalno like '%' || #{goalno} || '%'
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and FIND_IN_SET(t.touser,(select  GROUP_CONCAT(usercode) from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid}))))
+        </if>
+        order by t.goalno desc,t.id desc)t
+    </select>
+
+    <select id="queryCount" resultType="Integer" parameterType="com.ggs.admin.module.work.model.CmsWorkModel">
+        SELECT
+        count(*)counter
+        FROM cms_work_goal  t
+        left join sys_user t2 on t.touser=t2.usercode
+        left join sys_user t3 on t.createuser=t3.usercode
+        left join sys_org t4 on t4.id=t3.orgid
+        where 1=1
+        <if test="touser!=null and touser!=''">
+            and (t.touser=#{touser} or t.createuser=#{touser})
+        </if>
+        <if test="username!=null and username!=''">
+            and t2.username like '%' ||  #{username} || '%'
+        </if>
+        <if test="goalname!=null and goalname!=''">
+            and t.goalname like '%' ||  #{goalname} || '%'
+        </if>
+        <if test="goalno!=null and goalno!=''">
+            and t.goalno like '%' || #{goalno} || '%'
+        </if>
+        <if test="datestart != null and datestart != ''">AND t.createdate <![CDATA[>=]]> #{datestart}</if>
+        <if test="dateend != null and dateend != ''">AND t.createdate <![CDATA[<=]]>#{dateend}</if>
+
+        <if test="isfinish!=null and isfinish!=''">
+            and t.isfinish=#{isfinish}
+        </if>
+        <if test="orgid!=null and orgid!=''">
+            and t2.id in (select id from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid})) )
+        </if>
+
+    </select>
+
+    <update id="add" parameterType="com.ggs.admin.module.work.model.WorkGoalModel">
+        insert into cms_work_goal(goalname,goalno,plandate,createuser,touser,schedule,priority,createdate,createtime)
+        values(#{goalname},#{goalno},#{plandate},#{createuser},#{touser},#{schedule},#{priority},date_format(now(),'%Y-%m-%d'),date_format(now(),'%H:%i:%s'))
+    </update>
+
+    <update id="update" parameterType="com.ggs.admin.module.work.model.WorkGoalModel">
+        update cms_work_goal set updatedate=date_format(now(),'%Y-%m-%d'),updatetime=date_format(now(),'%H:%i:%s'),updateuser=#{updateuser}
+        <if test="touser!=null">
+            ,touser=#{touser}
+        </if>
+        <if test="goalname!=null">
+            ,goalname=#{goalname}
+        </if>
+        <if test="goalno!=null">
+            ,goalno=#{goalno}
+        </if>
+        <if test="remark!=null">
+            ,remark=#{remark}
+        </if>
+        <if test='isfinish!=null and isfinish=="1"'>
+            ,isfinish=#{isfinish},finishdate=date_format(now(),'%Y-%m-%d')
+        </if>
+        <if test='isfinish!=null and isfinish=="0"'>
+            ,isfinish=#{isfinish},finishdate=null
+        </if>
+        <if test="plandate!=null">
+            ,plandate=#{plandate}
+        </if>
+        <if test="finishdate!=null">
+            ,finishdate=#{finishdate}
+        </if>
+        <if test="schedule!=null">
+            ,schedule=#{schedule}
+        </if>
+        <if test="priority!=null">
+            ,priority=#{priority}
+        </if>
+
+        where id=#{id}
+    </update>
+
+    <update id="del" parameterType="com.ggs.admin.module.work.model.WorkGoalModel">
+        delete from cms_work_goal  where id=#{id}
+    </update>
+
+
+    <select id="queryMonthGoal" resultType="HashMap" parameterType="com.ggs.admin.module.work.model.WorkGoalModel">
+        select t.* from(
+        SELECT
+        t.*,
+        t2.username tousername,
+        t3.username createusername,
+        t4.name orgname
+        FROM cms_work_goal  t
+        left join sys_user t2 on t.touser=t2.usercode
+        left join sys_user t3 on t.createuser=t3.usercode
+        left join sys_org t4 on t4.id=t3.orgid
+        where 1=1
+        and t.goalno=date_format(now(),'%Y-%m')
+        <if test="orgid!=null and orgid!=''">
+            and t.touser in (select usercode from sys_user t where FIND_IN_SET(t.orgid,queryChildOrg(${orgid})) )
+        </if>
+        order by t.PRIORITY )t limit 5
+    </select>
+
+    <update id="log" parameterType="com.ggs.admin.module.work.model.WorkGoalModel">
+        insert into  cms_log (objid,objtype,createuser,remark,createdate,createtime) values(#{id},'workgoal',#{createuser},#{remark},date_format(now(),'%Y-%m-%d'),date_format(now(),'%H:%i:%s'))
+    </update>
+
+    <select id="queryLog" parameterType="com.ggs.admin.module.work.model.WorkGoalModel" resultType="HashMap">
+        select * from (
+        select t2.username,t.* from cms_log t
+        left join sys_user t2 on t.createuser=t2.usercode
+        where t.objid=#{id} and t.objtype='workgoal' order by t.id desc)t limit 20
+    </select>
+
+    <select id="countUnfinishWorks" parameterType="com.ggs.admin.module.work.model.WorkGoalModel" resultType="HashMap">
+        select 'goal' worktype,count(*)counter from cms_work_goal t where t.touser=#{touser} and t.isfinish='0'
+        union all
+        select 'work' ,count(*) from cms_work t where t.touser=#{touser} and t.isfinish='0'
+        union all
+        select 'problem' ,count(*) from cms_problem t where t.touser=#{touser} and t.isfinish='0'
+        union all
+        select 'bug' ,count(*) from cms_work_bug t where t.touser=#{touser} and t.isfinish='0'
+    </select>
+
+</mapper>

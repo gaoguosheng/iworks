@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title th:text="${title}"></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css" media="all"/>
+    <style type="text/css">
+        /**右键菜单*/
+        .rightmenu { position: absolute; width: 80px; z-index: 9999; display: none; background-color: #fff; padding: 2px; color: #333; border: 1px solid #eee; border-radius: 2px; cursor: pointer; }
+        .rightmenu li { text-align: center; display: block; height: 25px; line-height: 25px; }
+        .rightmenu li:hover { background-color: #666; color: #fff; }
+    </style>
+</head>
+
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    <div class="layui-header layui-bg-cyan">
+        <div class="layui-logo" th:text="${title}" style="font-weight: bold"></div>
+        <!-- 头部区域（可配合layui已有的水平导航） -->
+        <ul class="layui-nav layui-layout-left">
+            <li class="layui-nav-item layadmin-flexible" lay-unselect="" >
+                <a href="javascript:;" layadmin-event="flexible" title="侧边伸缩" id="animation-left-nav" style="display: none">
+                    <i class="layui-icon layui-icon-shrink-right" id="LAY_app_flexible"></i>
+                </a>
+            </li>
+            <li class="layui-nav-item"><a href="javascript:loadMain()">首页</a></li>
+            <li class="layui-nav-item" th:each="p,i : ${permissons}" th:if="(${p.pid} == 0)" th:class="${subsysid==p.id?'layui-nav-item layui-this ':'layui-nav-item'}">
+                <a th:href="${p.url}" th:text="${p.name}"></a>
+            </li>
+        </ul>
+        <ul class="layui-nav layui-layout-right " >
+            <li class="layui-nav-item" lay-unselect="">
+                <a  href="#"  onclick="parent.active.tabAdd('本月排名','cmswork/userRanking.html?datestart='+getMonthStartDate()+'&dateend='+getMonthEndDate(),'userRanking');">本月排名<span class="layui-badge" id="userRankingSpan">1</span></a>
+            </li>
+            <li class="layui-nav-item" lay-unselect="">
+                <a href="#"  onclick="parent.active.tabAdd('总排名','cmswork/userRanking.html','userRankingTotal');">总排名<span class="layui-badge" id="userRankingTotalSpan">1</span></a>
+            </li>
+            <li class="layui-nav-item" lay-unselect="">
+                <a href="javascript:;">
+                    【<span th:text="${admin.orgname}"></span>】
+                    <span th:text="${admin.username}"></span>
+                </a>
+
+
+                <dl class="layui-nav-child">
+                    <dd><a href="javascript:openPwd();">修改密码</a></dd>
+                </dl>
+            </li>
+            <li class="layui-nav-item" lay-unselect=""><a href="javascript:exit();">退出</a></li>
+        </ul>
+    </div>
+
+    <div class="layui-side layui-bg-black" style="width: 110px;">
+        <div class="layui-side-scroll">
+            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+            <ul class="layui-nav layui-nav-tree dynamic-navigation"  lay-filter="test" style="position: fixed; width: 110px;" id="side-nav">
+
+                <li class="layui-nav-item" th:each="p,i : ${permissons}" th:if="(${p.pid} == ${subsysid})">
+                    <a  th:text="${p.name}"></a>
+                    <dl class="layui-nav-child">
+                        <dd th:each="p2,j : ${permissons}" th:if="(${p2.pid} == ${p.id})"><a th:text="${p2.name}"  th:href="${'javascript:active.tabAdd('''+p2.name+''',''' +p2.url+''','+p2.id+')'}"></a></dd>
+                    </dl>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layui-body" style="left: 110px;">
+        <!-- 内容主体区域 -->
+        <div class="layui-tab  layui-tab-card" lay-filter="demo" lay-allowclose="true">
+            <ul class="layui-tab-title">
+            </ul>
+            <div class="layui-tab-content">
+            </div>
+        </div>
+    </div>
+
+  <div class="layui-footer" style="left: 110px;">
+      <div  class="layui-row">
+          <div class="layui-col-md6">
+              在线人数：<span  id="onlineCountSpan" class="layui-badge" style="cursor:pointer;">0</span>
+          </div>
+          <div class="layui-col-md6"  align="right">
+              <span th:text="${title}"></span> ©  <a href="#" target="_blank">GGS.</a> All Rights Reserved
+          </div>
+      </div>
+
+    </div>
+
+    <ul class="rightmenu">
+        <li data-type="closethis">关闭当前</li>
+        <li data-type="closeall">关闭所有</li>
+    </ul>
+</div>
+<script src="../../lib/jquery/jquery.js" ></script>
+<script src="../../lib/layui/layui.js" charset="utf-8"></script>
+<script src="../../lib/comm.js?v=1.0.0"></script>
+<script>
+    var onlines;
+    var $;
+    var layer;
+    var element;
+    layui.use('layer', function(){
+        layer = layui.layer;
+
+
+
+        userRanking({},"userRankingTotalSpan");//获取总排名
+
+        userRanking({datestart:getMonthStartDate(),dateend:getMonthEndDate()},"userRankingSpan");//获取排名
+
+    });
+
+    layui.use('element', function(){
+         $= layui.jquery;
+        element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+
+        loadMain();
+    });
+
+    //触发事件
+    var active = {
+        tabAdd: function (title,url, id) {
+
+            var exist = false;
+            $.each($(".layui-tab-title li[lay-id]"), function () {
+                if ($(this).attr("lay-id") == id) {
+                    exist = true;
+                }
+            })
+
+            if(!exist){
+                //新增一个Tab项
+                element.tabAdd('demo', {
+                    title: title //用于演示
+                    , content: '<iframe data-frameid="'+id+'" frameborder="0"  width="100%" src="' + url + '"></iframe>'
+                    , id: id //实际使用一般是规定好的id，这里以时间戳模拟下
+                });
+            }
+            CustomRightClick(id);//绑定右键菜单
+            active.tabChange(id);
+            FrameWH();//计算框架高度
+
+        }
+        ,tabDelete:  function (id) {
+            element.tabDelete("demo", id);//删除
+            $.each($(".layui-tab-title li[lay-id]"), function () {
+                var id=$(this).attr("lay-id");
+                active.tabChange(id);
+            })
+        }
+        ,tabChange: function (id) {
+            //切换到指定Tab项
+            element.tabChange('demo', id); //切换到：用户管理
+            $("iframe[data-frameid='"+id+"']").attr("src",$("iframe[data-frameid='"+id+"']").attr("src"))//切换后刷新框架
+        },
+        tabDeleteAll: function (ids) {//删除所有
+            $.each(ids, function (i,item) {
+                element.tabDelete("demo", item);
+            })
+        }
+    };
+
+
+
+    function openPwd(){
+        layer.open({type:2,content:"pwd.html",area:['480px','320px']});
+    }
+
+    function exit(){
+        layer.confirm('是否确认退出？', function(index){
+            //do something
+            layer.close(index);
+            top.location='logout.do';
+        });
+    }
+
+    function FrameWH() {
+        var h = $(window).height() -190;
+        $("iframe").css("height",h+"px");
+    }
+
+    //绑定右键菜单
+    function CustomRightClick(id) {
+        //取消右键
+        $('.layui-tab-title li').on('contextmenu', function () { return false; })
+        $('.layui-tab-title,.layui-tab-title li').click(function () {
+            $('.rightmenu').hide();
+        });
+        //桌面点击右击
+        $('.layui-tab-title li').on('contextmenu', function (e) {
+            var popupmenu = $(".rightmenu");
+            popupmenu.find("li").attr("data-id",id);
+            l = ($(document).width() - e.clientX) < popupmenu.width() ? (e.clientX - popupmenu.width()) : e.clientX;
+            t = ($(document).height() - e.clientY) < popupmenu.height() ? (e.clientY - popupmenu.height()) : e.clientY;
+            popupmenu.css({ left: l, top: t }).show();
+            //alert("右键菜单")
+            return false;
+        });
+    }
+
+    $(".rightmenu li").click(function () {
+        if ($(this).attr("data-type") == "closethis") {
+            active.tabDelete($(this).attr("data-id"))
+        } else if ($(this).attr("data-type") == "closeall") {
+            var tabtitle = $(".layui-tab-title li");
+            var ids = new Array();
+            $.each(tabtitle, function (i) {
+                ids[i] = $(this).attr("lay-id");
+            })
+
+            active.tabDeleteAll(ids);
+        }
+
+        $('.rightmenu').hide();
+    })
+
+    $(window).resize(function () {
+        FrameWH();
+    })
+
+
+    function loadMain(){
+        active.tabAdd("首页","main.do","main");
+    }
+
+    var isFlex=0;
+
+    //左侧导航栏收缩功能动画效果
+    $('#animation-left-nav').click(function(){
+        //这里定义一个全局变量来方便判断动画收缩的效果,也就是放在最外面
+        if(isFlex==0){
+            $(".layui-side").animate({width:'toggle'});
+            $(".layui-body").animate({left:'0px'});
+            $(".layui-footer").animate({left:'0px'});
+            isFlex=1;
+        }else{
+            $(".layui-side").animate({width:'toggle'});
+            $(".layui-body").animate({left:'110px'});
+            $(".layui-footer").animate({left:'110px'});
+            isFlex=0;
+        }
+    });
+    //左侧导航栏收缩提示
+    $('#animation-left-nav').hover(function(){
+        layer.tips('收缩左侧导航栏', '#animation-left-nav', {tips:[4,'#FF8000'],time:0});
+    },function(){
+        layer.closeAll('tips');
+    });
+
+    function getOnlineList(){
+        $.ajax({
+            url: "online.do",
+            type: "POST",
+            data:{},
+            dataType:'json',
+            timeout: 15000,
+            error: function(xml){
+                //alert("服务器可能正在升级暂时无法访问，请稍后刷新再试！");
+                //location='../login.html';
+            },
+            success: function(data){
+                console.log(data);
+                $("#onlineCountSpan").html(data.length);
+                onlines = "";
+                for(i in data){
+                    onlines+=data[i]+" ";
+                }
+                $("#onlineCountSpan").attr("title",onlines);
+            }
+        });
+    }
+
+    $(function(){
+       getOnlineList();//获取在线人数
+        window.setInterval(getOnlineList,10*1000);
+        $("#onlineCountSpan").click(function(){
+            var s = onlines.split(" ");
+            var html="";
+            for(var i in s){
+                html+=s[i]+"<br/>"
+            }
+            layer.alert(html);
+        });
+
+        $($("#side-nav .layui-nav-item")[0]).addClass("layui-nav-itemed");
+    });
+
+
+    $("#side-nav .layui-nav-item").click(function(){
+        $("#side-nav .layui-nav-item").removeClass("layui-nav-itemed");
+        $("#side-nav .layui-nav-item").removeClass("layui-this");
+        if($(this).has('dl').length){//如果有子菜单，显示下拉样式
+            $(this).addClass("layui-nav-itemed");
+        }else{//如果没有子菜单，显示菜单项样式
+            $(this).addClass("layui-this");
+        }
+    });
+
+
+    /**
+     * 获取排名
+     * */
+    function userRanking(params,id){
+        $.ajax({
+            url: "cmswork/userRanking.do",
+            type: "POST",
+            data:params,
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var data = data.data;
+                for(i in data){
+                    if(data[i].touser==$("#adminUsercode").val()){
+                        var n =data[i].rownum;
+                        $("#"+id).html(n);
+                        var username=$("#adminUsername").val();
+                        if(params.datestart && params.dateend){
+                            if(n<=3){
+                                layer.msg(username+"，您真棒，本月排名第"+n+"，实力接单王！");
+                            }else if(n>3 && n<=10){
+                                layer.msg(username+"，您很努力，本月排名第"+n+"，继续加油啊！");
+                            }else if(n>10 && n<=20){
+                                layer.msg(username+"，您有点落后了，本月排名第"+n+"，加油冲一冲哦！");
+                            }else{
+                                layer.msg(username+"，您拖后腿了，本月排名第"+n+"，要努力呀！");
+                            }
+
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+</script>
+</body>
+<input type="hidden" id="adminUsercode" th:value="${admin.usercode}">
+<input type="hidden" id="adminUsername" th:value="${admin.username}">
+
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title></title>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="stylesheet" href="../../../lib/layui/css/layui.css" media="all"/>
+</head>
+
+<body class="layui-layout-body" style="margin: 10px;">
+
+        <!-- 内容主体区域 -->
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">日期范围</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" id="daterange" name="daterange" placeholder=" - ">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">查询</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+
+        <div id="worksTotalContainer" ></div>
+
+
+
+
+
+
+
+
+
+<script src="../../../lib/jquery/jquery.js" ></script>
+<script src="../../../lib/layui/layui.js" charset="utf-8"></script>
+<script src="../../../lib/echarts/echarts.min.js"></script>
+
+<script>
+    var params;
+    var form;
+    var myChart;
+    /**
+     * 初始化
+     * */
+    function init(){
+
+
+        layui.use('laydate', function(){
+            var laydate = layui.laydate;
+            //日期范围
+            laydate.render({
+                elem: '#daterange'
+                ,range: true
+            });
+        });
+
+        layui.use('table', function(){
+                    form = layui.form;
+
+            //监听提交
+            form.on('submit(search)', function(data){
+                /*layer.alert(JSON.stringify(data.field), {
+                    title: '最终的提交信息'
+                });*/
+                params=data.field;
+                loadWorksTotal(params);//当周工作量统计
+                return false;
+            });
+
+
+
+        });
+    }
+
+
+    function loadWorksTotal(params){
+        $.ajax({
+            url: "orgTotal.do",
+            type: "POST",
+            data:params,
+            dataType:'json',
+            success: function(data){
+                console.log(data);
+                var xdata= new Array();
+                var ydata=new Array();
+                var ydata2=new Array();
+                for(i in data){
+                    xdata[i]=data[i].username;
+                    ydata[i]=data[i].totalcount-data[i].finishcount;
+                    ydata2[i]=data[i].finishcount;
+                }
+                load_bar_charts("worksTotalContainer","问题分析",xdata,ydata,ydata2);
+            }
+        });
+    }
+
+
+
+    function load_bar_charts(id,title,xdata,ydata,ydata2){
+        if(!myChart){
+            var dom = document.getElementById(id);
+            myChart = echarts.init(dom);
+
+            myChart.on('click', function (param) {
+                layer.open({
+                    type:2
+                    ,content:"causeTotal.html?orgname="+param.name+"&daterange="+$("#daterange").val()
+                    ,area:['100%','100%']
+                    ,btn: ['关闭']
+                    ,yes: function(index, layero){
+                        //按钮【按钮一】的回调
+                        layer.close(index);
+                    }});
+            });
+        }
+
+        var app = {};
+        option = null;
+        option = {
+            title : {
+                text: title
+            },
+            tooltip : {
+                trigger: 'axis',
+                axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                    type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            legend: {
+                data:['总量','未解决','已解决']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis : [
+                {
+                    type : 'category',
+                    data : xdata
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value'
+                }
+            ],
+            series : [
+                {
+                    name:'未解决',
+                    type:'bar',
+                    stack: '总量',
+                    data:ydata,
+                    label:{
+                        normal:{
+                            show:true
+                        }
+                    }
+                },
+                {
+                    name:'已解决',
+                    type:'bar',
+                    stack: '总量',
+                    data:ydata2,
+                    label:{
+                        normal:{
+                            show:true
+                        }
+                    }
+                }
+            ]
+        };
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+
+
+    init();
+
+    $(function(){
+        var h = $(window).height() -100;
+        $("#worksTotalContainer").css("height",h+"px");
+        loadWorksTotal(params);
+    });
+
+</script>
+</body>
+
+
+</html>
